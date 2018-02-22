@@ -1,0 +1,36 @@
+
+import json
+import gherkindb
+
+from equipit import generateError
+
+def getAllItems():
+    db = gherkindb.load("databases/items.db", True)
+    items = []
+    for key in db.scpyall():
+        item = db.get(key)
+        if item is None:
+            return generateError("DB Error", "No, or 'None' item key(s)")
+        items.append(item)
+    if len(items) == 0:
+        return generateError("DB Error", "There are no items found in databases/items.db")
+    try:
+        items = json.dumps(items)
+    except:
+        return generateError("DB Error", "Json unable to dump item list to string")
+    return items
+
+''' Handles /item calls '''
+def itemroute(environ, start_response):
+    start_response('200 OK', [('Content-type', 'text/plain')])
+    params = environ['params']
+    classifier = params.get('classifier')
+    if classifier == "all":
+        resp = getAllItems()
+    else:
+        resp = generateError("Parameter Error", "Invalid classifier in /items")
+    try:
+        resp = resp.encode('utf-8')
+    except AttributeError:
+        resp = generateError("Internal Error", "Tried to encode a non-encodable object.")
+    yield resp
