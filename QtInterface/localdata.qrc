@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/values">
+        <file>localdata/adminhash.txt</file>
+    </qresource>
+</RCC>

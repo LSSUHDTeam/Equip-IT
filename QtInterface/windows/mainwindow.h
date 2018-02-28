@@ -1,8 +1,11 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QDir>
+#include <QStandardPaths>
 #include <QMainWindow>
 #include "basewindow.h"
+#include "displaynetworkerror.h"
 #include "framework/windowdescriptors.h"
 #include "framework/contextmanger.h"
 
@@ -23,6 +26,14 @@ public:
 public slots:
     void hideBaseWindow();
 
+    // From DAM via context manager
+    void dataReady();
+    void networkErrorPresent(DAMStatus);
+
+    // From network error display
+    void networkErrorDialogRetrySignaled();
+    void networkErrorIgnore();
+
 signals:
     void updateBaseWindow();
 
@@ -35,6 +46,8 @@ private:
     Ui::MainWindow *ui;
     BaseWindow * baseWindow;
     ContextManager localContext;
+
+    bool waitingForUpdate, idle;
 
     void startNewSession();
 

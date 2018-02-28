@@ -16,6 +16,13 @@ struct reservableItems {
     // Schedule id ties to schedule item to track usability
     QString barcode, name, desc;
     std::vector<peripherals> periphs;
+
+    reservableItems& operator=(const reservableItems &other)
+    {
+        barcode = other.barcode; name = other.name; desc = other.desc;
+        periphs = other.periphs;
+        return *this;
+    }
 };
 
 // Item schedule info
@@ -39,6 +46,12 @@ struct reservations {
 // Reminders!
 struct reservedReminders {
     QString id, ti,title, created, desc, start, end, by, status;
+};
+
+// Categories
+struct itemCategories {
+    QString id, label, parent;
+    QStringList barcodes;
 };
 
 #endif // STRUCTURES_H

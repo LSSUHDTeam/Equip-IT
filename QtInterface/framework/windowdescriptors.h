@@ -10,9 +10,11 @@ enum class WindowDescriptors{
     ReservationRoot,
     ReservationAdd,
     ReservationRemove,
-    InstantCheckoutRoot,
+    CheckoutRoot,
+    CheckInRoot,
     OverviewRoot,
-
+    AdminPanel,
+    _non_window_DAM,
 };
 
 class WindowHelper
@@ -34,10 +36,16 @@ public:
             return "ReservationAdd";
         case WindowDescriptors::ReservationRemove:
             return "ReservationRemove";
-        case WindowDescriptors::InstantCheckoutRoot:
-            return "InstantCheckoutRoot";
+        case WindowDescriptors::CheckoutRoot:
+            return "CheckoutRoot";
+        case WindowDescriptors::CheckInRoot:
+            return "CheckInRoot";
         case WindowDescriptors::OverviewRoot:
             return "OverviewRoot";
+        case WindowDescriptors::AdminPanel:
+            return "AdminPanel";
+        case WindowDescriptors::_non_window_DAM:
+            return "Data Access Manager (framework)";
         }
         return "Not Found";
     }

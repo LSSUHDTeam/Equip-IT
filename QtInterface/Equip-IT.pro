@@ -18,7 +18,14 @@ SOURCES += main.cpp\
     framework/closeeventfilter.cpp \
     framework/sessionobject.cpp \
     framework/dataaccessmanager.cpp \
-    framework/contextmanger.cpp
+    framework/contextmanger.cpp \
+    windows/displaynetworkerror.cpp \
+    windows/adminpanel.cpp \
+    windows/checkout.cpp \
+    windows/screenboard.cpp \
+    objects/etouchlineedit.cpp \
+    framework/ephimeral.cpp \
+    windows/quickscanitem.cpp
 
 HEADERS  += windows/mainwindow.h \
     windows/basewindow.h \
@@ -27,10 +34,24 @@ HEADERS  += windows/mainwindow.h \
     framework/sessionobject.h \
     framework/dataaccessmanager.h \
     framework/contextmanger.h \
-    framework/structures.h
+    framework/structures.h \
+    windows/displaynetworkerror.h \
+    windows/adminpanel.h \
+    windows/checkout.h \
+    windows/screenboard.h \
+    objects/etouchlineedit.h \
+    framework/ephimeral.h \
+    windows/quickscanitem.h
 
 FORMS    += windows/mainwindow.ui \
-    windows/basewindow.ui
+    windows/basewindow.ui \
+    windows/displaynetworkerror.ui \
+    windows/adminpanel.ui \
+    windows/checkout.ui \
+    windows/screenboard.ui \
+    windows/quickscanitem.ui
 
 DISTFILES += \
     Documentation/Data_Layout.md
+
+RESOURCES +=

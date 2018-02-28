@@ -28,12 +28,17 @@ public:
     QString getSessionUser();
 
     /*
-        Data Access Manager Accessors
+        DAM Accessors
     */
+    void replayRequest();
+    void performSpecifiedQuery(DAMOrigin queryInfo);
+
 
     /*
-        Data Access Manager Getters
+        DAM Getters
     */
+    std::vector<reservableItems> getExistingItems();
+
 
 signals:
 
@@ -41,12 +46,22 @@ signals:
     void rippleSessionTimeout();
     void rippleSessionTicker(QString);
 
+    // From DAM object
+    void rippleDataReady();
+    void rippleNetworkError(DAMStatus);
+    void rippleExternalRequestResponse(DAMError, DAMAlienPackage);
+
 
 public slots:
 
     // Ripple session timeout
     void sessionTimeout();
     void sessionTicker(QString);
+
+    // Ripple DAM
+    void dataReady();
+    void networkError(DAMStatus);
+    void externalRequestResponse(DAMError, DAMAlienPackage);
 
 private:
     SessionObject session;
