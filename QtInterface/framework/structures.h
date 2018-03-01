@@ -9,6 +9,18 @@
 struct peripherals {
     QString name, desc;
     int count, numberpresent;
+
+    peripherals& operator=(const peripherals &other)
+    {
+        name = other.name; desc = other.desc; count = other.count;
+        numberpresent = other.numberpresent;
+        return *this;
+    }
+
+    bool operator==(const peripherals &other)
+    {
+        return (name == other.name);
+    }
 };
 
 // Valuable things that are reserverd

@@ -25,7 +25,9 @@ SOURCES += main.cpp\
     windows/screenboard.cpp \
     objects/etouchlineedit.cpp \
     framework/ephimeral.cpp \
-    windows/quickscanitem.cpp
+    windows/quickscanitem.cpp \
+    windows/peripheralvalidator.cpp \
+    windows/reservationviewer.cpp
 
 HEADERS  += windows/mainwindow.h \
     windows/basewindow.h \
@@ -41,7 +43,9 @@ HEADERS  += windows/mainwindow.h \
     windows/screenboard.h \
     objects/etouchlineedit.h \
     framework/ephimeral.h \
-    windows/quickscanitem.h
+    windows/quickscanitem.h \
+    windows/peripheralvalidator.h \
+    windows/reservationviewer.h
 
 FORMS    += windows/mainwindow.ui \
     windows/basewindow.ui \
@@ -49,7 +53,9 @@ FORMS    += windows/mainwindow.ui \
     windows/adminpanel.ui \
     windows/checkout.ui \
     windows/screenboard.ui \
-    windows/quickscanitem.ui
+    windows/quickscanitem.ui \
+    windows/peripheralvalidator.ui \
+    windows/reservationviewer.ui
 
 DISTFILES += \
     Documentation/Data_Layout.md

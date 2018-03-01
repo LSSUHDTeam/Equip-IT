@@ -16,11 +16,13 @@ MainWindow::MainWindow(QWidget *parent) :
         dir.mkdir("resources");
 
 
+    this->showMaximized();
     idle = true;
     waitingForUpdate = true;
     ui->uidIn->setEnabled(false);
     ui->pushButton->setEnabled(false);
     ui->statusBar->showMessage("Waiting for data sync....");
+    ui->uidIn->setFocus();
 
     // The base window never really goes away, it just stays hidden until a user is authd
     baseWindow = new BaseWindow(&localContext, this);
@@ -47,6 +49,7 @@ void MainWindow::dataReady()
         ui->uidIn->setEnabled(true);
         ui->pushButton->setEnabled(true);
         ui->statusBar->showMessage("Ready");
+        ui->uidIn->setFocus();
     }
 }
 
@@ -71,7 +74,7 @@ void MainWindow::startNewSession()
     this->hide();
     localContext.changeUserLocation(WindowDescriptors::BaseWindow);
     emit updateBaseWindow();
-    baseWindow->show();
+    baseWindow->showMaximized();
 }
 
 void MainWindow::endSession()

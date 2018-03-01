@@ -6,6 +6,15 @@ QuickScanItem::QuickScanItem(ContextManager *context, QWidget *parent) :
     ui(new Ui::QuickScanItem)
 {
     ui->setupUi(this);
+
+    pvalidator = new PeripheralValidator(this);
+    connect(this, SIGNAL(closeChildren()), pvalidator, SLOT(forceClose()));
+    connect(this, SIGNAL(updatePeriphWindow(std::vector<peripherals>)), pvalidator, SLOT(updateWindow(std::vector<peripherals>)));
+    connect(pvalidator, SIGNAL(periphsValidated(std::vector<peripherals>)), this, SLOT(updatePeriphs(std::vector<peripherals>)));
+    screenSub = ui->mdiArea->addSubWindow(pvalidator);
+    screenSub->setWindowFlags(Qt::FramelessWindowHint);
+    screenSub->showMaximized();
+
     this->showMaximized();
     noPeriphs = false;
     currentState = QSIState::ScanWindow;
@@ -13,26 +22,37 @@ QuickScanItem::QuickScanItem(ContextManager *context, QWidget *parent) :
     currentItems = localContext->getExistingItems();
     ui->toolBox->setCurrentIndex(0);
     ui->lineEdit->setFocus();
-    peripheralList << "Name" << "Description" << "Count" << "Number Present";
 
 
-    ui->periphralTable->setColumnCount(peripheralList.length());
-    ui->periphralTable->setHorizontalHeaderLabels(peripheralList);
-    ui->periphralTable->setColumnWidth(0, ui->periphralTable->width()/4);
-    ui->periphralTable->setColumnWidth(1, ui->periphralTable->width()/4);
-    ui->periphralTable->setColumnWidth(2, ui->periphralTable->width()/4);
-    ui->periphralTable->setColumnWidth(3, ui->periphralTable->width()/4-25);
 }
 
 QuickScanItem::~QuickScanItem()
 {
     localContext = 0;
+    delete pvalidator;
+    delete screenSub;
     delete ui;
 }
 
 void QuickScanItem::forceClose()
 {
+    ui->mdiArea->removeSubWindow(pvalidator);
+    emit closeChildren();
     this->close();
+}
+
+void QuickScanItem::updatePeriphs(std::vector<peripherals> p)
+{
+    qDebug() << "Got updated periphs: \n";
+
+    itemFound.periphs = p;
+    for(auto i = p.begin(); i != p.end(); ++i)
+    {
+        qDebug()  << (*i).name << ":" << (*i).desc << ":" <<
+                    (*i).count << ":" << (*i).numberpresent << "\n";
+    }
+
+
 }
 
 void QuickScanItem::on_lineEdit_returnPressed()
@@ -71,55 +91,18 @@ void QuickScanItem::buildConfirmationWindow()
         return;
     }
 
-    qDebug() << "Item scanned: " << itemScanned.name;
     itemFound = itemScanned;
 
-    ui->nameLabel->setText(itemFound.name);
-    ui->barcodeLabel->setText(itemFound.barcode);
-
-    /*
-
-
-
-                BUILD THE PERIPHERAL TABLE HERE
-
-
-    */
-    ui->periphralTable->setRowCount(itemFound.periphs.size());
+    emit updatePeriphWindow(itemFound.periphs);
 
     if(itemFound.periphs.size() == 0)
         noPeriphs = true;
     else
         noPeriphs = false;
 
-    int loc = 0;
-    for(auto i = itemFound.periphs.begin(); i!= itemFound.periphs.end(); ++i)
-    {
-        QTableWidgetItem *name = new QTableWidgetItem();
-        name->setText((*i).name);
-        name->setFlags(name->flags() ^ Qt::ItemIsEditable);
-        ui->periphralTable->setItem(loc, 0, name);
-
-        QTableWidgetItem *desc = new QTableWidgetItem();
-        desc->setText((*i).desc);
-        desc->setFlags(desc->flags() ^ Qt::ItemIsEditable);
-        ui->periphralTable->setItem(loc, 1, desc);
-
-        QTableWidgetItem *count = new QTableWidgetItem();
-        count->setText( QString::number( (*i).count ));
-        count->setFlags(count->flags() ^ Qt::ItemIsEditable);
-        ui->periphralTable->setItem(loc, 2, count);
-
-        QTableWidgetItem *numberpresent = new QTableWidgetItem();
-        numberpresent->setText( QString::number((*i).numberpresent));
-        numberpresent->setFlags(numberpresent->flags() ^ Qt::ItemIsEditable);
-        ui->periphralTable->setItem(loc, 3, numberpresent);
-
-        loc++;
-    }
-
     // Show next window for verification
     currentState = QSIState::VerifyWindow;
+    ui->itemNameDisplayLabel->setText("Item: " + itemFound.name + ". Description: " + itemFound.desc + "\nBarcode: " + itemFound.barcode);
     ui->toolBox->setCurrentIndex(1);
 }
 
@@ -177,4 +160,10 @@ void QuickScanItem::on_cancelButton_clicked()
 void QuickScanItem::on_cancelButton_2_clicked()
 {
     this->close();
+}
+
+void QuickScanItem::on_clearButton_clicked()
+{
+    ui->lineEdit->clear();
+    ui->lineEdit->setFocus();
 }

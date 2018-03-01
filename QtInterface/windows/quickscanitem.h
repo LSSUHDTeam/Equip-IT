@@ -4,6 +4,8 @@
 #include <QDebug>
 #include <QDialog>
 #include <QCloseEvent>
+#include <QMdiSubWindow>
+#include "windows/peripheralvalidator.h"
 #include "framework/contextmanger.h"
 
 enum class QSIState{
@@ -24,10 +26,14 @@ public:
     ~QuickScanItem();
 
 signals:
+    void closeChildren();
     void dataReady(QStringList barcodes);
+    void updatePeriphWindow(std::vector<peripherals>);
 
 public slots:
     void forceClose();
+
+    void updatePeriphs(std::vector<peripherals>);
 
 private slots:
     void on_lineEdit_returnPressed();
@@ -42,6 +48,8 @@ private slots:
 
     void on_cancelButton_2_clicked();
 
+    void on_clearButton_clicked();
+
 private:
     Ui::QuickScanItem *ui;
     ContextManager *localContext;
@@ -49,8 +57,10 @@ private:
 
     reservableItems itemFound;
     std::vector<reservableItems> currentItems;
-    QStringList peripheralList;
     bool noPeriphs;
+
+    QMdiSubWindow *screenSub;
+    PeripheralValidator *pvalidator;
 
     void buildConfirmationWindow();
 };

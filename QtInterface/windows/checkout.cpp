@@ -176,7 +176,7 @@ void CheckOut::on_addItemButton_clicked()
     {
 
         QuickScanItem *quickScan = new QuickScanItem(localContext, this);
-        connect(this, SIGNAL(closeChildren()), quickScan, SLOT(foceClose()));
+        connect(this, SIGNAL(closeChildren()), quickScan, SLOT(forceClose()));
         connect(quickScan, SIGNAL(dataReady(QStringList)), this, SLOT(addItemsToReservation(QStringList)));
         quickScan->setAttribute(Qt::WA_DeleteOnClose, true);
         quickScan->show();

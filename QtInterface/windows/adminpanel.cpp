@@ -7,6 +7,7 @@ AdminPanel::AdminPanel(ContextManager * context, QWidget *parent) :
 {
     ui->setupUi(this);
     localContext = context;
+    this->showMaximized();
 }
 
 AdminPanel::~AdminPanel()
