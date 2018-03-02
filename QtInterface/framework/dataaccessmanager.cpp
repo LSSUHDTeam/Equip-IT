@@ -525,3 +525,31 @@ std::vector<reservableItems> DataAccessManager::getAllItems()
 {
     return existingItems;
 }
+
+/*
+
+        Update Data
+
+*/
+DAMError DataAccessManager::updatePeripheralInformationByBarcode(QString barcode,
+                                                                 std::vector<peripherals> newPerifs)
+{
+    bool updated = false;
+    for(auto i = existingItems.begin(); i!= existingItems.end() && !updated; ++i)
+    {
+        if((*i).barcode == barcode)
+        {
+            (*i).periphs = newPerifs;
+            updated = true;
+        }
+    }
+    if (updated)
+    {
+        emit existingItemDataAltered(existingItems);
+        return DAMError(0, "Updated", "Item ["+barcode+"] was updated locally.",
+                        DAMOrigin(WindowDescriptors::_non_window_DAM, QUrl("")));
+    } else {
+        return DAMError(-1, "Error Updating", "Item ["+barcode+"] was not found.",
+                        DAMOrigin(WindowDescriptors::_non_window_DAM, QUrl("")));
+    }
+}

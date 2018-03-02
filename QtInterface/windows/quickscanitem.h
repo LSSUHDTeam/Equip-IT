@@ -8,6 +8,8 @@
 #include "windows/peripheralvalidator.h"
 #include "framework/contextmanger.h"
 
+#define MAX_FUTURE_BUFFER_MINUTES 60
+
 enum class QSIState{
     ScanWindow,
     VerifyWindow
@@ -29,6 +31,7 @@ signals:
     void closeChildren();
     void dataReady(QStringList barcodes);
     void updatePeriphWindow(std::vector<peripherals>);
+    void reservationComplete();
 
 public slots:
     void forceClose();
@@ -63,6 +66,7 @@ private:
     PeripheralValidator *pvalidator;
 
     void buildConfirmationWindow();
+
 };
 
 #endif // QUICKSCANITEM_H

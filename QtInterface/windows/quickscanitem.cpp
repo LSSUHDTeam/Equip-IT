@@ -15,15 +15,18 @@ QuickScanItem::QuickScanItem(ContextManager *context, QWidget *parent) :
     screenSub->setWindowFlags(Qt::FramelessWindowHint);
     screenSub->showMaximized();
 
+
     this->showMaximized();
     noPeriphs = false;
     currentState = QSIState::ScanWindow;
     localContext = context;
-    currentItems = localContext->getExistingItems();
     ui->toolBox->setCurrentIndex(0);
     ui->lineEdit->setFocus();
 
 
+    // This needs to be updated to only show items available from the current time
+    // to a (maximum) of MAX_FUTURE_BUFFER_MINUTES hour
+    currentItems = localContext->getExistingItems();
 }
 
 QuickScanItem::~QuickScanItem()
@@ -43,16 +46,7 @@ void QuickScanItem::forceClose()
 
 void QuickScanItem::updatePeriphs(std::vector<peripherals> p)
 {
-    qDebug() << "Got updated periphs: \n";
-
     itemFound.periphs = p;
-    for(auto i = p.begin(); i != p.end(); ++i)
-    {
-        qDebug()  << (*i).name << ":" << (*i).desc << ":" <<
-                    (*i).count << ":" << (*i).numberpresent << "\n";
-    }
-
-
 }
 
 void QuickScanItem::on_lineEdit_returnPressed()
@@ -123,19 +117,9 @@ void QuickScanItem::on_toolBox_currentChanged(int index)
 
 void QuickScanItem::on_addItemConfirmation_clicked()
 {
-    /*
-
-
-
-
-        Update item's peripheral data in local context
-
-
-
-    */
-
-    qDebug() << "Update peripheral information here...";
-
+    // Update DAM item cache
+    localContext->updateItemPeriphs(itemFound.barcode, itemFound.periphs);
+    currentItems = localContext->getExistingItems();
 
     // Turn into form parent requires, and emit
     QStringList returnList;
@@ -147,6 +131,8 @@ void QuickScanItem::on_addItemConfirmation_clicked()
     // Return to scan window
     currentState = QSIState::ScanWindow;
     ui->toolBox->setCurrentIndex(0);
+    ui->lineEdit->clear();
+    ui->lineEdit->setFocus();
 }
 
 
@@ -159,6 +145,7 @@ void QuickScanItem::on_cancelButton_clicked()
 
 void QuickScanItem::on_cancelButton_2_clicked()
 {
+    emit reservationComplete();
     this->close();
 }
 

@@ -159,6 +159,20 @@ public:
     */
     std::vector<reservableItems> getAllItems();
 
+    /*
+
+        Data Updating
+
+    */
+
+    // Update Item Peripherals
+    DAMError updatePeripheralInformationByBarcode(QString barcode, std::vector<peripherals> newPerifs);
+
+
+    /*
+        Get Item's schedule
+    */
+
 signals:
 
     // Tie this to something to report when the network goes wrong
@@ -173,6 +187,10 @@ signals:
 
     // Aliens return
     void externalRequestResponse(DAMError, DAMAlienPackage);
+
+    // Item structures have been updated
+    void existingItemDataAltered(std::vector<reservableItems>);
+
 
 private slots:
 

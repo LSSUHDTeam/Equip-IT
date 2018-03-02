@@ -533,6 +533,37 @@ Reservation</string>
        </widget>
       </item>
       <item>
+       <spacer name="horizontalSpacer_12">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="cancelReservationButton">
+        <property name="minimumSize">
+         <size>
+          <width>400</width>
+          <height>100</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>20</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>CANCEL</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <spacer name="horizontalSpacer_10">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -562,7 +593,6 @@ Reservation</string>
     </item>
    </layout>
    <zorder></zorder>
-   <zorder>horizontalLayoutWidget</zorder>
    <zorder>verticalSpacer_6</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">

@@ -10,6 +10,7 @@ Ephimeral::~Ephimeral()
     localContext = 0;
 }
 
+
 /*
     Reservation - Setters
 */
@@ -19,9 +20,9 @@ void Ephimeral::setReservationTimeRange(QDateTime start, QDateTime end)
     currentReservation.end = dateTimeToString(end);
 }
 
-void Ephimeral::addItemToReservation(ephimeralResItem item)
+void Ephimeral::addItemToReservation(QString barcode)
 {
-    currentReservation.itemBarcodes.append(item.barcode);
+    currentReservation.itemBarcodes.append(barcode);
 }
 
 void Ephimeral::removeItemFromReservationByBarcode(QString barcode)
@@ -29,18 +30,30 @@ void Ephimeral::removeItemFromReservationByBarcode(QString barcode)
     currentReservation.itemBarcodes.removeOne(barcode);
 }
 
-/*
-    Reservation - Getters
-*/
-std::vector<ephimeralResItem> Ephimeral::getAvailableItemsAndDueDateTimes(QString start, QString end)
+void Ephimeral::setReservationLocation(QString building, QString room)
 {
-    QDateTime formated_datetime_start = stringToDateTime(start);
-    QDateTime formated_datetime_end = stringToDateTime(end);
+    currentReservation.title = building + " in " + room;
 }
 
 reservations Ephimeral::getCurrentReservation()
 {
     return currentReservation;
+}
+
+std::vector<reservableItems> Ephimeral::getItemsOnReservation()
+{
+    std::vector<reservableItems> itemsOnRes;
+    std::vector<reservableItems> allItems = localContext->getExistingItems();
+    foreach(QString barcode, currentReservation.itemBarcodes)
+    {
+
+        for(auto i = allItems.begin(); i != allItems.end(); ++i)
+        {
+            if((*i).barcode == barcode)
+                itemsOnRes.push_back((*i));
+        }
+    }
+    return itemsOnRes;
 }
 
 /*

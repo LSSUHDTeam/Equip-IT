@@ -12,6 +12,7 @@ CheckOut::CheckOut(ContextManager *context, CheckoutType mode, QWidget *parent) 
     // Operation dependencies
     localContext = context;
     checkoutMode = mode;
+    ephimeralReservation = new Ephimeral(localContext);
 
     // Log current mode
     switch(checkoutMode){
@@ -59,6 +60,7 @@ CheckOut::~CheckOut()
     localContext = 0;
     delete screenSub;
     delete screenBoard;
+    delete ephimeralReservation;
     delete ui;
 }
 
@@ -174,7 +176,6 @@ void CheckOut::on_addItemButton_clicked()
         break;
     case CheckoutType::QuickCheckout:
     {
-
         QuickScanItem *quickScan = new QuickScanItem(localContext, this);
         connect(this, SIGNAL(closeChildren()), quickScan, SLOT(forceClose()));
         connect(quickScan, SIGNAL(dataReady(QStringList)), this, SLOT(addItemsToReservation(QStringList)));
@@ -190,7 +191,35 @@ void CheckOut::on_addItemButton_clicked()
 */
 void CheckOut::addItemsToReservation(QStringList barcodes)
 {
+    foreach(QString barcode, barcodes)
+    {
+        ephimeralReservation->addItemToReservation(barcode);
+    }
+}
 
+/*
+    Set the time frame from one of the windows
+*/
+void CheckOut::setTimeFrame(QDateTime start, QDateTime end)
+{
+    localContext->addUserCrumb("Time set to: " +
+                               end.toString(
+                                   QString(STUDENT_FRIENDLY_FORMAT_BECAUSE_THEY_DONT_UNDERSTAND_24_HOUR_TIME)));
+     ui->displayLabelTime->setText(
+                 "Returns: "+
+                 end.toString(
+                     QString(STUDENT_FRIENDLY_FORMAT_BECAUSE_THEY_DONT_UNDERSTAND_24_HOUR_TIME)
+                     ));
+     ephimeralReservation->setReservationTimeRange(start, end);
+}
+/*
+    Set the location of the reservation
+*/
+void CheckOut::setBuildingAndRoom(QString building, QString room)
+{
+    localContext->addUserCrumb("Selected building: " + building + ", in room: " + room);
+    ephimeralReservation->setReservationLocation(building, room);
+    ui->diplayLabelWhere->setText(building + ", " + room);
 }
 
 /*
@@ -200,7 +229,12 @@ void CheckOut::addItemsToReservation(QStringList barcodes)
 */
 void CheckOut::on_locationButton_clicked()
 {
-
+    localContext->addUserCrumb("Selecting building");
+    BuildingSelection *bldg = new BuildingSelection(this);
+    connect(this, SIGNAL(closeChildren()), bldg, SLOT(forceClose()));
+    connect(bldg, SIGNAL(buildingAndRoomSelected(QString,QString)), this, SLOT(setBuildingAndRoom(QString,QString)));
+    bldg->setAttribute(Qt::WA_DeleteOnClose, true);
+    bldg->showMaximized();
 }
 
 /*
@@ -211,4 +245,46 @@ void CheckOut::on_locationButton_clicked()
 void CheckOut::on_timeButton_clicked()
 {
 
+    switch(checkoutMode){
+    case CheckoutType::BuilderCheckout:
+    {
+        localContext->addUserCrumb("Checkout 'builder' mode");
+        TimeGetter *timeget = new TimeGetter(this);
+        timeget->setAttribute(Qt::WA_DeleteOnClose, true);
+        timeget->showMaximized();
+        break;
+    }
+    case CheckoutType::QuickCheckout:
+    {
+        localContext->addUserCrumb("Getting time 'quickly'");
+        QuickTimeGet *timeget = new QuickTimeGet(this);
+        connect(this, SIGNAL(closeChildren()), timeget, SLOT(forceClose()));
+        connect(timeget, SIGNAL(setDateTimeRange(QDateTime, QDateTime)), this, SLOT(setTimeFrame(QDateTime, QDateTime)));
+        timeget->setAttribute(Qt::WA_DeleteOnClose, true);
+        timeget->showMaximized();
+        break;
+    }
+    }
+}
+
+/*
+
+    Cancel Reservation
+
+*/
+void CheckOut::on_cancelReservationButton_clicked()
+{
+    localContext->addUserCrumb("Cancelling reservation");
+    this->close();
+}
+
+/*
+
+    Complete Reservation
+
+*/
+void CheckOut::on_completeReservationButton_clicked()
+{
+    localContext->addUserCrumb("Attempting to complete reservation");
+    qDebug() << "VERIFY DETAILS AND CHECK FOR ANY TIME ISSUES";
 }

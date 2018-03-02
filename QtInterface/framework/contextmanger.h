@@ -28,7 +28,7 @@ public:
     QString getSessionUser();
 
     /*
-        DAM Accessors
+        DAM Network Accessors
     */
     void replayRequest();
     void performSpecifiedQuery(DAMOrigin queryInfo);
@@ -39,6 +39,10 @@ public:
     */
     std::vector<reservableItems> getExistingItems();
 
+    /*
+        DAM Local Data Setters
+    */
+    DAMError updateItemPeriphs(QString barcode, std::vector<peripherals> newPeriphs);
 
 signals:
 
@@ -51,6 +55,7 @@ signals:
     void rippleNetworkError(DAMStatus);
     void rippleExternalRequestResponse(DAMError, DAMAlienPackage);
 
+    void rippleDAMItemDataAltered(std::vector<reservableItems>);
 
 public slots:
 
@@ -62,6 +67,7 @@ public slots:
     void dataReady();
     void networkError(DAMStatus);
     void externalRequestResponse(DAMError, DAMAlienPackage);
+    void itemDataAltered(std::vector<reservableItems>);
 
 private:
     SessionObject session;

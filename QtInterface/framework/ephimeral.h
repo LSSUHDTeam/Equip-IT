@@ -20,17 +20,6 @@ enum class EphimeralStage{
     BuildingReminder
 };
 
-struct ephimeralResItem{
-    reservableItems resItem;
-    QString barcode;
-    QString nextScheduledDateTime;
-
-    ephimeralResItem(reservableItems item, QString nextRes, QString ibarcode)
-    {
-        resItem = item; nextScheduledDateTime = nextRes; barcode = ibarcode;
-    }
-};
-
 class Ephimeral : public QObject
 {
     Q_OBJECT
@@ -38,18 +27,21 @@ public:
     explicit Ephimeral(ContextManager *context, QObject *parent = 0);
     ~Ephimeral();
 
+    void clearReservation();
+
     /*
         Reservation - Setters
     */
     void setReservationTimeRange(QDateTime start, QDateTime end);
-    void addItemToReservation(ephimeralResItem);
+    void addItemToReservation(QString barcode);
     void removeItemFromReservationByBarcode(QString barcode);
+    void setReservationLocation(QString building, QString room);
 
     /*
         Reservation - Getters
     */
-    std::vector<ephimeralResItem> getAvailableItemsAndDueDateTimes(QString start, QString end);
     reservations getCurrentReservation();
+    std::vector<reservableItems> getItemsOnReservation();
 
 signals:
 public slots:
@@ -67,7 +59,6 @@ private:
         Reservation building
     */
     reservations currentReservation;
-
 
 
 };

@@ -44,6 +44,11 @@ std::vector<reservableItems> ContextManager::getExistingItems()
     return dam.getAllItems();
 }
 
+DAMError ContextManager::updateItemPeriphs(QString barcode, std::vector<peripherals> newPeriphs)
+{
+    return dam.updatePeripheralInformationByBarcode(barcode, newPeriphs);
+}
+
 void ContextManager::sessionTimeout()
 {
     emit rippleSessionTimeout();
@@ -67,6 +72,11 @@ void ContextManager::networkError(DAMStatus e)
 void ContextManager::externalRequestResponse(DAMError e, DAMAlienPackage p)
 {
     emit rippleExternalRequestResponse(e,p);
+}
+
+void ContextManager::itemDataAltered(std::vector<reservableItems> items)
+{
+    emit rippleDAMItemDataAltered(items);
 }
 
 void ContextManager::killSession()

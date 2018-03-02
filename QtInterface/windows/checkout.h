@@ -5,9 +5,13 @@
 #include <QMdiArea>
 #include <QMainWindow>
 #include <QCloseEvent>
+#include "framework/ephimeral.h"
 #include "framework/contextmanger.h"
+#include "dialogs/timegetter.h"
+#include "dialogs/quicktimeget.h"
 #include "windows/screenboard.h"
 #include "windows/quickscanitem.h"
+#include "windows/buildingselection.h"
 #include "objects/etouchlineedit.h"
 
 
@@ -20,6 +24,18 @@ enum class KeyboardFlow{
 enum class CheckoutType{
     QuickCheckout,
     BuilderCheckout
+};
+
+struct QCTimeWarnings{
+    reservableItems item;
+    bool shownOnce;
+    scheduleEntry entryOfConfliction;
+    QCTimeWarnings(reservableItems theItem, scheduleEntry confliction)
+    {
+        item = theItem;
+        entryOfConfliction = confliction;
+        shownOnce = false;
+    }
 };
 
 namespace Ui {
@@ -55,6 +71,11 @@ public slots:
     // Data window return slots
     void addItemsToReservation(QStringList barcodes);
 
+    // Time frame returned
+    void setTimeFrame(QDateTime start, QDateTime end);
+
+    void setBuildingAndRoom(QString building, QString room);
+
 private slots:
     void on_viewItemsButton_clicked();
 
@@ -63,6 +84,10 @@ private slots:
     void on_locationButton_clicked();
 
     void on_timeButton_clicked();
+
+    void on_cancelReservationButton_clicked();
+
+    void on_completeReservationButton_clicked();
 
 private:
     Ui::CheckOut *ui;
@@ -76,6 +101,8 @@ private:
     QMdiSubWindow *screenSub;
     ContextManager *localContext;
     KeyboardFlow keyDirector;
+
+    Ephimeral *ephimeralReservation;
 
     void shutdownWindow();
     void closeEvent(QCloseEvent *event);
