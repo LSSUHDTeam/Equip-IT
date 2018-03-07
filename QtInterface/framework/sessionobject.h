@@ -25,7 +25,7 @@ public:
 
     // Setters / accessors
     bool startSession(QString uid);
-    void addCrumb(QString actionDescription);
+    void addCrumb(QString actionDescription, bool silent=false);
     void changeWindow(WindowDescriptors wid);
     void killSession();
 

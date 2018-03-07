@@ -1,13 +1,14 @@
 #ifndef STRUCTURES_H
 #define STRUCTURES_H
 
+#include <QDebug>
 #include <QString>
 #include <vector>
 #include <QDateTime>
 #include <QStringList>
 #include <QMap>
 
-#define DATETIME_FORMAT "hh:mm. ddd MMMM d yy"
+#define DATETIME_FORMAT "dd/MM/yyyy h:mm AP"
 
 // Small things that get coupled with reservables, but aren't kept track of
 struct peripherals {
@@ -54,7 +55,8 @@ struct scheduleEntry{
 
 enum class ScheduleConflictTypes{
     startTimeOverlap,
-    endTimeOverlap
+    endTimeOverlap,
+
 };
 
 
@@ -71,6 +73,14 @@ struct scheduleConflict{
     scheduleConflict()
     {
         exists = false;
+    }
+
+    scheduleConflict& operator=(const scheduleConflict &other)
+    {
+        exists = other.exists; itembarcode = other.itembarcode;
+        conflict = other.conflict; conflictType = other.conflictType;
+        secondsTo = other.secondsTo;
+        return *this;
     }
 
     scheduleConflict(QString item, QDateTime rstart,
@@ -109,17 +119,25 @@ struct schedule{
         QDateTime dt_start = QDateTime::fromString(start, QString(DATETIME_FORMAT));
         QDateTime dt_end = QDateTime::fromString(end, QString(DATETIME_FORMAT));
 
+        qDebug() << "END TIME : " << end;
+
         for(auto i = scheduleInformation.begin(); i!= scheduleInformation.end(); ++i)
         {
             QDateTime dummy_start = QDateTime::fromString((*i).start, QString(DATETIME_FORMAT));
             QDateTime dummy_end = QDateTime::fromString((*i).end, QString(DATETIME_FORMAT));
             if(dt_start >= dummy_start && dt_start <= dummy_end)
             {
+                qDebug() << "CONFLICT:startTimeOverlap " << "REQSTART: " << start <<
+                            "DUMMYSTART " << (*i).start << " DUMMY END " << (*i).end;
+
                 return scheduleConflict(scheduleid, dummy_start, dummy_end,
                                         (*i), ScheduleConflictTypes::startTimeOverlap);
             }
             if(dt_start < dummy_start && dt_end > dummy_end)
             {
+                qDebug() << "CONFLICT:endTimeOverlap " << "REQSTART: " << start <<
+                            "REQEND: " << end <<
+                            "DUMMYSTART " << (*i).start << " DUMMY END " << (*i).end;
                 return scheduleConflict(scheduleid, dummy_start, dummy_end,
                                         (*i), ScheduleConflictTypes::endTimeOverlap);
             }
@@ -130,7 +148,8 @@ struct schedule{
 
 // Reservation structure
 struct reservations {
-    QString id, ti, title, created, wfor, by, start, end, status;
+    QString id, ti, title, created, wfor, by,
+                start, end, status, retby, email;
     QStringList itemBarcodes;
 };
 

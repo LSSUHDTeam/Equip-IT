@@ -39,7 +39,7 @@ DataAccessManager::DataAccessManager(QObject *parent) : QObject(parent)
     connect(alienManager, SIGNAL(finished(QNetworkReply*)), this, SLOT(alienResponse(QNetworkReply*)));
 
     // API Token - This will be put to file eventually, and will change once server goes live
-    apiToken = "fefd8a1a97021dbab2d105c4784a1906cd89fc575009387d378b8807192c16e3";
+    apiToken = QString(WEB_SERVER_APITOKEN);
 
     // QUrl has the ability to '.addQuery' and build urls, but the ones we use are few,
     // and won't change
@@ -67,26 +67,21 @@ void DataAccessManager::updateLocalInformation(WindowDescriptors caller)
     lastRequest.caller = caller;
     lastRequest.isFullUpdate = true;
 
-    qDebug() << "Performing uli";
     while(item_busy || res_busy || rem_busy || cats_busy){}
     runningFullUpdate = true;
+    status_report.reset();
 
     itemManager->get(QNetworkRequest(requestMap["getAllItems"]));
     resManager->get(QNetworkRequest(requestMap["getTodaysRes"]));
     remManager->get(QNetworkRequest(requestMap["getTodaysRem"]));
     catManager->get(QNetworkRequest(requestMap["getAllCats"]));
-
-    qDebug() << "All requests sent";
 }
 
 void DataAccessManager::replayLastRequest()
 {
-    qDebug() << "Retrying last query";
-
     // Full updates are special
     if (lastRequest.isFullUpdate)
     {
-        qDebug() << "Last query was a full update";
         updateLocalInformation(lastRequest.caller);
         return;
     }
@@ -96,7 +91,6 @@ void DataAccessManager::replayLastRequest()
         alienManager->get(QNetworkRequest(lastRequest.request));
     else
     {
-        qDebug() << "\n\n\n\n\t\tSOMETHING COMPLETLY UNTESTED IS ABOUT TO HAPPEN...............\n";
         alienManager->post(QNetworkRequest(lastRequest.request),
                            lastRequest.postQuery.toString(QUrl::FullyEncoded).toUtf8());
     }
@@ -104,8 +98,6 @@ void DataAccessManager::replayLastRequest()
 
 void DataAccessManager::localNetCheck()
 {
-    qDebug() << "CHECK";
-
     if (runningFullUpdate)
     {
         localTicker++;
@@ -119,7 +111,6 @@ void DataAccessManager::localNetCheck()
             }
             else
             {
-                qDebug() << "COMPLETED - EMITTING";
                 status_report.time_last_update = QTime::currentTime();
                 emit dataUpdated();
             }
@@ -284,7 +275,9 @@ void DataAccessManager::performSpecificQuery(DAMOrigin info)
         return;
     }
 
-    lastRequest = info;
+    if(info.allowReplay)
+        lastRequest = info;
+
     status_report.error_other.origin_of_request = info;
 
     alienDataType = info.format;
@@ -323,22 +316,29 @@ void DataAccessManager::alienResponse(QNetworkReply *reply)
         status_report.error_other.errorCode = errCheck.errorCode;
         status_report.error_other.message = errCheck.message;
         status_report.error_other.description = errCheck.description;
-        emit networkError(status_report);
+        emit externalRequestResponse(errCheck, returnPackage);
         return;
     }
 
     switch(alienDataType){
     case respDataTypes::items:
+        qDebug() << "DAM:AlienResponse:Items";
         returnPackage.items = jsonToItemData(qreply);
         break;
     case respDataTypes::reminders:
+        qDebug() << "DAM:AlienResponse:Reminders";
         returnPackage.rem = jsonToRemData(qreply);
         break;
     case respDataTypes::reservations:
+        qDebug() << "DAM:AlienResponse:Reservations";
         returnPackage.res = jsonToResData(qreply);
         break;
     case respDataTypes::schedules:
+        qDebug() << "DAM:AlienResponse:Schedule";
         returnPackage.sched = jsonToSchedData(qreply);
+        break;
+    default:
+        qDebug() << "Unhandled data type for alien!";
         break;
     }
     emit externalRequestResponse(errCheck, returnPackage);
@@ -425,6 +425,8 @@ std::vector<reservations> DataAccessManager::jsonToResData(QString data)
         t_res.start = res["start"].toString();
         t_res.end = res["end"].toString();
         t_res.status = res["status"].toString();
+        t_res.retby = res["retby"].toString();
+        t_res.email = res["email"].toString();
         // Add barcodes!
         QJsonArray itemBarcodes = res["itemBarcodes"].toArray();
         foreach(const QJsonValue &i, itemBarcodes)
@@ -491,6 +493,7 @@ std::vector<itemCategories> DataAccessManager::jsonToCatData(QString data)
 
 std::vector<schedule> DataAccessManager::jsonToSchedData(QString data)
 {
+
     std::vector<schedule> parsed;
     QJsonDocument jsond = QJsonDocument::fromJson(data.toUtf8());
     QJsonArray jsona = jsond.array();
@@ -514,6 +517,7 @@ std::vector<schedule> DataAccessManager::jsonToSchedData(QString data)
         parsed.push_back(t_sched);
     }
     return parsed;
+
 }
 
 /*

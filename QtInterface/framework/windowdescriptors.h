@@ -15,6 +15,7 @@ enum class WindowDescriptors{
     OverviewRoot,
     AdminPanel,
     _non_window_DAM,
+    _non_window_ephimeral,
 };
 
 class WindowHelper
@@ -46,6 +47,8 @@ public:
             return "AdminPanel";
         case WindowDescriptors::_non_window_DAM:
             return "Data Access Manager (framework)";
+        case WindowDescriptors::_non_window_ephimeral:
+            return "Ephimeral reservation (framework)";
         }
         return "Not Found";
     }

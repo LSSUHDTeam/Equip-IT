@@ -35,9 +35,12 @@ void PeripheralValidator::updateWindow(std::vector<peripherals> iperiphs)
     // if the perihperal data
     for(auto i = iperiphs.begin(); i != iperiphs.end(); ++i)
     {
-        for(int j = 0; j != (*i).numberpresent; j++)
+        int np = (*i).numberpresent;
+        for(int j = 0; j != (*i).count; j++)
         {
-            periphs.push_back(PeriphScreenWrapper((*i)));
+            bool isPresent;
+            (0 < np--) ? isPresent = true : isPresent = false;
+            periphs.push_back(PeriphScreenWrapper((*i), isPresent));
         }
     }
     setupTable();

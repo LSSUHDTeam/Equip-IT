@@ -8,11 +8,19 @@ CheckOut::CheckOut(ContextManager *context, CheckoutType mode, QWidget *parent) 
     // UI
     ui->setupUi(this);
     this->showMaximized();
+    timeSet = false; itemsSet = false;
+    forSet = false; bySet = false, allowView = false;
 
     // Operation dependencies
     localContext = context;
     checkoutMode = mode;
-    ephimeralReservation = new Ephimeral(localContext);
+    ephimeralReservation = new Ephimeral(localContext, this);
+
+    // Response to validation checking
+    connect(ephimeralReservation, SIGNAL(invalidReservation(std::vector<scheduleConflict>)),
+            this, SLOT(reservationIsInvalid(std::vector<scheduleConflict>)));
+    connect(ephimeralReservation, SIGNAL(validReservation()),
+            this, SLOT(reservationIsValid()));
 
     // Log current mode
     switch(checkoutMode){
@@ -40,6 +48,7 @@ CheckOut::CheckOut(ContextManager *context, CheckoutType mode, QWidget *parent) 
     connect(this, SIGNAL(closeKeyboard()), screenBoard, SLOT(forceClose()));
     connect(screenBoard, SIGNAL(windowClosing()), this, SLOT(keyboardClosed()));
     connect(screenBoard, SIGNAL(keyPress(QString)), this, SLOT(keyboardDataReceived(QString)));
+    screenBoard->setAttribute(Qt::WA_DeleteOnClose, true);
 
     /*
         Setup MDI area that contains on-screen keyboard
@@ -59,7 +68,6 @@ CheckOut::~CheckOut()
 {
     localContext = 0;
     delete screenSub;
-    delete screenBoard;
     delete ephimeralReservation;
     delete ui;
 }
@@ -119,6 +127,15 @@ void CheckOut::emailFocusLost(){}
 // No longer implemented - keyboard remains open
 void CheckOut::bringUpKeyboard(){}
 
+void CheckOut::checkForViewEnable()
+{
+    if(forSet && bySet && itemsSet && timeSet)
+    {
+        allowView = true;
+        ui->completeReservationButton->setEnabled(true);
+    }
+}
+
 void CheckOut::keyboardClosed()
 {
     localContext->addUserCrumb("Keyboard closed");
@@ -138,6 +155,9 @@ void CheckOut::keyboardDataReceived(QString data)
         }
         else
             ui->forEdit->insert(data);
+        forSet = true;
+        ephimeralReservation->setReservationFor(ui->forEdit->text());
+        checkForViewEnable();
         break;
     case KeyboardFlow::email:
         if (data == QString(SCREENBOARD_BACKSPACE))
@@ -148,6 +168,9 @@ void CheckOut::keyboardDataReceived(QString data)
         }
         else
             ui->emailEdit->insert(data);
+        bySet = true;
+        checkForViewEnable();
+        ephimeralReservation->setReservationEmail(ui->emailEdit->text());
         break;
     case KeyboardFlow::ignore:
         qDebug() << "Keyboard data " << data << " present while ignoring.\n";
@@ -165,7 +188,16 @@ void CheckOut::keyboardDataReceived(QString data)
 */
 void CheckOut::on_viewItemsButton_clicked()
 {
-
+    checkForViewEnable();
+    if (allowView)
+    {
+        ReservationViewer *rview = new ReservationViewer(ephimeralReservation, this);
+        connect(this, SIGNAL(closeChildren()), rview, SLOT(forceClose()));
+        rview->setAttribute(Qt::WA_DeleteOnClose, true);
+        rview->showMaximized();
+    } else {
+        ui->errorLabel->setText("Reservation not fully setup.");
+    }
 }
 
 void CheckOut::on_addItemButton_clicked()
@@ -195,6 +227,8 @@ void CheckOut::addItemsToReservation(QStringList barcodes)
     {
         ephimeralReservation->addItemToReservation(barcode);
     }
+    itemsSet = true;
+    checkForViewEnable();
 }
 
 /*
@@ -211,6 +245,8 @@ void CheckOut::setTimeFrame(QDateTime start, QDateTime end)
                      QString(STUDENT_FRIENDLY_FORMAT_BECAUSE_THEY_DONT_UNDERSTAND_24_HOUR_TIME)
                      ));
      ephimeralReservation->setReservationTimeRange(start, end);
+     timeSet = true;
+     checkForViewEnable();
 }
 /*
     Set the location of the reservation
@@ -219,7 +255,21 @@ void CheckOut::setBuildingAndRoom(QString building, QString room)
 {
     localContext->addUserCrumb("Selected building: " + building + ", in room: " + room);
     ephimeralReservation->setReservationLocation(building, room);
-    ui->diplayLabelWhere->setText(building + ", " + room);
+
+    if(building.length() > 6)
+        ui->diplayLabelWhere->setText(building.mid(0,6) + "... , " + room);
+    else
+        ui->diplayLabelWhere->setText(building + ", " + room);
+}
+
+void CheckOut::reservationCompletedAndAcknowledged()
+{
+
+}
+
+void CheckOut::finalizeReservationForceClosed()
+{
+    localContext->addUserCrumb("Finalizer was force closed", true);
 }
 
 /*
@@ -230,7 +280,7 @@ void CheckOut::setBuildingAndRoom(QString building, QString room)
 void CheckOut::on_locationButton_clicked()
 {
     localContext->addUserCrumb("Selecting building");
-    BuildingSelection *bldg = new BuildingSelection(this);
+    BuildingSelection *bldg = new BuildingSelection(localContext, this);
     connect(this, SIGNAL(closeChildren()), bldg, SLOT(forceClose()));
     connect(bldg, SIGNAL(buildingAndRoomSelected(QString,QString)), this, SLOT(setBuildingAndRoom(QString,QString)));
     bldg->setAttribute(Qt::WA_DeleteOnClose, true);
@@ -285,6 +335,46 @@ void CheckOut::on_cancelReservationButton_clicked()
 */
 void CheckOut::on_completeReservationButton_clicked()
 {
-    localContext->addUserCrumb("Attempting to complete reservation");
-    qDebug() << "VERIFY DETAILS AND CHECK FOR ANY TIME ISSUES";
+    localContext->addUserCrumb("Requesting ephimeral validation");
+    ephimeralReservation->finalizeReservation();
+}
+
+void CheckOut::reservationIsValid()
+{
+    localContext->addUserCrumb("Valid reservation created");
+    QStringList message;
+    message << "\n\n\tThe reservation request has been posted to the server!" <<
+               "Once you close this message (OKAY), you will be returned to the" <<
+               "primary Equip-IT window.";
+    SimpleMessageBox *smb = new SimpleMessageBox(smbdata("Checkout", "Valid Reservation", message), this);
+    connect(this, SIGNAL(closeChildren()), smb, SLOT(forceClose()));
+    connect(smb, SIGNAL(messageBoxClosed()), this, SLOT(reservationCompletedAndAcknowledged()));
+    smb->setAttribute(Qt::WA_DeleteOnClose, true);
+    smb->show();
+}
+
+void CheckOut::reservationIsInvalid(std::vector<scheduleConflict> schedulingConflicts)
+{
+    localContext->addUserCrumb(QString::number(schedulingConflicts.size()) +
+                               " scheduling conflicts were found.");
+    FinalizeReservation *fr = new FinalizeReservation(ephimeralReservation, this);
+    connect(this, SIGNAL(closeChildren()), fr, SLOT(forceClose()));
+    connect(fr, SIGNAL(forceClosed()), this, SLOT(finalizeReservationForceClosed()));
+
+    // Add connection for completion thing here
+
+    fr->setAttribute(Qt::WA_DeleteOnClose, true);
+    fr->showMaximized();
+    localContext->addUserCrumb("Reservation conflict manager opened.");
+}
+
+// Testing is cool i guess.
+void CheckOut::on_testLoadingButton_clicked()
+{
+    ephimeralReservation->addItemToReservation("938-x837-3284");
+    ephimeralReservation->addItemToReservation("929-x837-3284");
+    ephimeralReservation->setReservationTimeRange(QDateTime::currentDateTime(), QDateTime::currentDateTime().addDays(1));
+    ephimeralReservation->setReservationFor("Josh Tester");
+    ephimeralReservation->setReservationEmail("jbosley2@lssu.edu");
+    ui->completeReservationButton->setEnabled(true);
 }

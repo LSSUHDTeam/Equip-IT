@@ -5,6 +5,25 @@
 #include "framework/dataaccessmanager.h"
 #include "framework/contextmanger.h"
 
+enum class NetworkCallerOrigin{
+    primary,
+    secondary
+};
+
+struct NetworkCallerConfig {
+    bool allowRetry;
+    NetworkCallerOrigin caller;
+    DAMStatus status;
+
+    NetworkCallerConfig(){}
+    NetworkCallerConfig(NetworkCallerOrigin origin, DAMStatus stat, bool retry)
+    {
+        allowRetry = retry;
+        caller = origin;
+        status = stat;
+    }
+};
+
 namespace Ui {
 class DisplayNetworkError;
 }
@@ -14,7 +33,7 @@ class DisplayNetworkError : public QDialog
     Q_OBJECT
 
 public:
-    explicit DisplayNetworkError(ContextManager *context, DAMStatus status, QWidget *parent = 0);
+    explicit DisplayNetworkError(ContextManager *context, NetworkCallerConfig netConfig, QWidget *parent = 0);
     ~DisplayNetworkError();
 
 signals:
@@ -30,7 +49,9 @@ private:
     Ui::DisplayNetworkError *ui;
 
     ContextManager *localContext;
-    void setupWindow(DAMStatus);
+    NetworkCallerConfig netConfiguration;
+    void setupStandard();
+    void setupCustom();
 
 };
 

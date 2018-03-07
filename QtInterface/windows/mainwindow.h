@@ -2,6 +2,9 @@
 #define MAINWINDOW_H
 
 #include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QTextStream>
 #include <QStandardPaths>
 #include <QMainWindow>
 #include "basewindow.h"

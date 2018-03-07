@@ -27,10 +27,13 @@ SOURCES += main.cpp\
     framework/ephimeral.cpp \
     windows/quickscanitem.cpp \
     windows/peripheralvalidator.cpp \
-    windows/reservationviewer.cpp \
     dialogs/timegetter.cpp \
     dialogs/quicktimeget.cpp \
-    windows/buildingselection.cpp
+    windows/buildingselection.cpp \
+    dialogs/addbuilding.cpp \
+    dialogs/reservationviewer.cpp \
+    dialogs/finalizereservation.cpp \
+    dialogs/simplemessagebox.cpp
 
 HEADERS  += windows/mainwindow.h \
     windows/basewindow.h \
@@ -48,10 +51,13 @@ HEADERS  += windows/mainwindow.h \
     framework/ephimeral.h \
     windows/quickscanitem.h \
     windows/peripheralvalidator.h \
-    windows/reservationviewer.h \
     dialogs/timegetter.h \
     dialogs/quicktimeget.h \
-    windows/buildingselection.h
+    windows/buildingselection.h \
+    dialogs/addbuilding.h \
+    dialogs/reservationviewer.h \
+    dialogs/finalizereservation.h \
+    dialogs/simplemessagebox.h
 
 FORMS    += windows/mainwindow.ui \
     windows/basewindow.ui \
@@ -61,10 +67,13 @@ FORMS    += windows/mainwindow.ui \
     windows/screenboard.ui \
     windows/quickscanitem.ui \
     windows/peripheralvalidator.ui \
-    windows/reservationviewer.ui \
     dialogs/timegetter.ui \
     dialogs/quicktimeget.ui \
-    windows/buildingselection.ui
+    windows/buildingselection.ui \
+    dialogs/addbuilding.ui \
+    dialogs/reservationviewer.ui \
+    dialogs/finalizereservation.ui \
+    dialogs/simplemessagebox.ui
 
 DISTFILES += \
     Documentation/Data_Layout.md

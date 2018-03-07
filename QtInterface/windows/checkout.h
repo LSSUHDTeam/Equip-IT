@@ -9,6 +9,9 @@
 #include "framework/contextmanger.h"
 #include "dialogs/timegetter.h"
 #include "dialogs/quicktimeget.h"
+#include "dialogs/reservationviewer.h"
+#include "dialogs/simplemessagebox.h"
+#include "dialogs/finalizereservation.h"
 #include "windows/screenboard.h"
 #include "windows/quickscanitem.h"
 #include "windows/buildingselection.h"
@@ -76,6 +79,13 @@ public slots:
 
     void setBuildingAndRoom(QString building, QString room);
 
+
+    // Finalization Slots
+    void reservationCompletedAndAcknowledged();
+
+    void finalizeReservationForceClosed();
+
+
 private slots:
     void on_viewItemsButton_clicked();
 
@@ -88,6 +98,11 @@ private slots:
     void on_cancelReservationButton_clicked();
 
     void on_completeReservationButton_clicked();
+
+    void on_testLoadingButton_clicked();
+
+    void reservationIsValid();
+    void reservationIsInvalid(std::vector<scheduleConflict>);
 
 private:
     Ui::CheckOut *ui;
@@ -102,12 +117,16 @@ private:
     ContextManager *localContext;
     KeyboardFlow keyDirector;
 
+    bool timeSet, itemsSet, forSet, bySet, allowView;
+
     Ephimeral *ephimeralReservation;
 
     void shutdownWindow();
     void closeEvent(QCloseEvent *event);
 
     void bringUpKeyboard();
+
+    void checkForViewEnable();
 };
 
 #endif // CHECKOUT_H

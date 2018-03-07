@@ -6,6 +6,7 @@
 #include <QUrl>
 #include <QMap>
 #include <QTime>
+#include <QDebug>
 #include <QString>
 #include <QObject>
 #include <QUrlQuery>
@@ -24,6 +25,7 @@
 #include "windowdescriptors.h"
 
 #define WEB_SERVER_ADDRESS "http://localhost:8080"
+#define WEB_SERVER_APITOKEN "fefd8a1a97021dbab2d105c4784a1906cd89fc575009387d378b8807192c16e3"
 
 enum class respDataTypes{
     items,
@@ -36,7 +38,7 @@ struct DAMOrigin {
     WindowDescriptors caller;
     QUrl request;
     bool isFullUpdate;
-    bool isGet;
+    bool isGet, allowReplay;
     respDataTypes format;
     QUrlQuery postQuery;
 
@@ -47,11 +49,13 @@ struct DAMOrigin {
 
     DAMOrigin(WindowDescriptors wcaller, QUrl req)
     {
+        allowReplay = true;
         caller = wcaller; request = req;
     }
 
     DAMOrigin(WindowDescriptors w, QUrl req, bool fullUpdate, bool get, respDataTypes fmt, QUrlQuery post_query)
     {
+        allowReplay = true;
         caller= w; request = req; isFullUpdate = fullUpdate, isGet = get; format = fmt; postQuery = post_query;
     }
 
@@ -99,15 +103,26 @@ struct DAMError {
     }
 };
 
+struct DAMAlienPackage {
+    std::vector<reservableItems> items;
+    std::vector<reservations> res;
+    std::vector<reservedReminders> rem;
+    std::vector<schedule> sched;
+};
+
 struct DAMStatus {
+    bool replayable;
     bool init_item, init_res, init_rem, init_cats;
     bool last_item, last_res, last_rem, last_cats;
     QTime time_init, time_last_update;
     DAMError error_item, error_res, error_rem, error_cats, error_other;
+    std::vector<DAMError> secondaryErrors;
+    std::vector<DAMAlienPackage> secondaryPackages;
 
     DAMStatus()
     {
         DAMOrigin noOrigin;
+        replayable = true;
         init_item = true; init_res = true; init_rem = true; init_cats = true;
         last_item = true; last_res = true; last_rem = true; last_cats = true;
         time_init = QTime::currentTime(); time_last_update = QTime::currentTime();
@@ -116,6 +131,11 @@ struct DAMStatus {
         error_rem = DAMError(0, "None", "None", noOrigin);
         error_cats = DAMError(0, "None", "None", noOrigin);
         error_other = DAMError(0, "None", "None", noOrigin);
+    }
+    DAMStatus(std::vector<DAMError> secondaryOriginErrors, std::vector<DAMAlienPackage> originPackages)
+    {
+        secondaryErrors = secondaryOriginErrors;
+        secondaryPackages = originPackages;
     }
 
     DAMStatus& operator=(const DAMStatus &other)
@@ -128,16 +148,23 @@ struct DAMStatus {
         error_item = other.error_item; error_res = other.error_res;
         error_rem = other.error_rem; error_other = other.error_other;
         error_cats = other.error_cats;
+        secondaryErrors = other.secondaryErrors;
+        secondaryPackages = other.secondaryPackages;
         return *this;
     }
 
-};
+    void reset()
+    {
+        DAMOrigin noOrigin;
+        secondaryErrors.clear();
+        secondaryPackages.clear();
+        error_item = DAMError(0, "None", "None", noOrigin);
+        error_res = DAMError(0, "None", "None", noOrigin);
+        error_rem = DAMError(0, "None", "None", noOrigin);
+        error_cats = DAMError(0, "None", "None", noOrigin);
+        error_other = DAMError(0, "None", "None", noOrigin);
+    }
 
-struct DAMAlienPackage {
-    std::vector<reservableItems> items;
-    std::vector<reservations> res;
-    std::vector<reservedReminders> rem;
-    std::vector<schedule> sched;
 };
 
 class DataAccessManager : public QObject

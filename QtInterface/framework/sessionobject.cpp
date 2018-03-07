@@ -19,13 +19,14 @@ bool SessionObject::startSession(QString uid)
     return true;
 }
 
-void SessionObject::addCrumb(QString desc)
+void SessionObject::addCrumb(QString desc, bool silent)
 {
     // Add a user action to the current page
     currentPath.actionDescription.append(desc);
 
     // Reset sesson b/c of activity
-    resetSessionTimer();
+    if(!silent)
+        resetSessionTimer();
 }
 
 void SessionObject::changeWindow(WindowDescriptors wid)

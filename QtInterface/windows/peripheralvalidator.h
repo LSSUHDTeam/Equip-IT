@@ -11,9 +11,9 @@ struct PeriphScreenWrapper{
     peripherals periph;
     bool present;
 
-    PeriphScreenWrapper(peripherals p){
+    PeriphScreenWrapper(peripherals p, bool isPres){
         periph = p;
-        present = true;
+        present = isPres;
     }
 };
 

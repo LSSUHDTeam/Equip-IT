@@ -15,6 +15,19 @@ MainWindow::MainWindow(QWidget *parent) :
     if (!dir.exists("resources"))
         dir.mkdir("resources");
 
+    // Ensure a buildings.json file exists
+    QString buildingsFile = addin_path + "/resources/buildings.json";
+    QFileInfo check(buildingsFile);
+    if (!check.exists())
+    {
+        QFile bldgfile(buildingsFile);
+        if (bldgfile.open(QIODevice::ReadWrite))
+        {
+            QTextStream stream(&bldgfile);
+            stream << "[]" << endl;
+        }
+        bldgfile.close();
+    }
 
     this->showMaximized();
     idle = true;
@@ -42,9 +55,9 @@ MainWindow::~MainWindow()
 
 void MainWindow::dataReady()
 {
-    qDebug() << "DATA IS READY!";
     if (waitingForUpdate)
     {
+        qDebug() << "Waiting for update, and data is ready";
         waitingForUpdate = false;
         ui->uidIn->setEnabled(true);
         ui->pushButton->setEnabled(true);
@@ -57,7 +70,9 @@ void MainWindow::hideBaseWindow()
 {
     idle = true;
     baseWindow->hide();
-    this->show();
+    ui->uidIn->setEnabled(true);
+    ui->pushButton->setEnabled(true);
+    ui->statusBar->showMessage("Ready");
 }
 
 void MainWindow::startNewSession()
@@ -71,7 +86,9 @@ void MainWindow::startNewSession()
     }
     idle = false;
     ui->uidIn->clear();
-    this->hide();
+    ui->uidIn->setEnabled(false);
+    ui->pushButton->setEnabled(false);
+    ui->statusBar->showMessage("Waiting for user session to end.");
     localContext.changeUserLocation(WindowDescriptors::BaseWindow);
     emit updateBaseWindow();
     baseWindow->showMaximized();
@@ -88,7 +105,10 @@ void MainWindow::networkErrorPresent(DAMStatus status)
     if(idle)
     {
         ui->statusBar->showMessage("...Network Error...");
-        DisplayNetworkError *dne = new DisplayNetworkError(&localContext ,status, this);
+        DisplayNetworkError *dne = new DisplayNetworkError(
+                    &localContext ,
+                    NetworkCallerConfig(NetworkCallerOrigin::primary, status, true),
+                    this);
         connect(dne, SIGNAL(retrying()), this, SLOT(networkErrorDialogRetrySignaled()));
         connect(dne, SIGNAL(ignoreIssue()), this, SLOT(networkErrorIgnore()));
         dne->setAttribute(Qt::WA_DeleteOnClose, true);
