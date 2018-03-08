@@ -105,12 +105,45 @@ def addReminder(rem_dict):
     dbti.ladd(rem_dict["ti"], rem_dict)
     return 0
 
+def addCategory(cat_dict):
+    if not isinstance(cat_dict, dict):
+        return -1
+    db = gherkindb.load("databases/cats.db", True)
+    dbresid = gherkindb.load("databases/catids.db", True)
+
+    # Reservation already exists - This isn't an edit function
+    if db.get(cat_dict["id"]) is not None:
+        return -2
+
+    # Force unique labels
+    for catkey in db.scpyall():
+        cat = db.get(catkey)
+        if cat["label"] == cat_dict["label"]:
+            return -3
+
+    # Obtain a new reservation id
+    new_res_id = dbresid.get("next_res_id")
+    if new_res_id is None:
+        new_res_id = 0
+    dbresid.set("next_res_id", new_res_id+1)
+    new_res_id = str(new_res_id)
+
+    cat_dict["id"] = new_res_id
+
+    # Add to the db
+    db.set(cat_dict["id"], cat_dict)
+    return 0
 
 '''
     Load the dbs with some test info
 '''
 if __name__ == '__main__':
 
+    db = gherkindb.load("databases/config.db", True)
+    if db.get("qtApiToken") is None:
+        print("Loading development api token")
+        db.set("qtApiToken", 
+        "fefd8a1a97021dbab2d105c4784a1906cd89fc575009387d378b8807192c16e3")
 
     print("Adding item: ", addItem({
         "barcode": "938-x837-3284",
@@ -152,16 +185,28 @@ if __name__ == '__main__':
         ]
     }))
 
+    print("Adding cat: ", addCategory({
+        "id": "GIVEN BY CAT ADDER",
+        "label": "Projectors",
+        "parent": "NONE",
+        "itembarcodes": [
+            "929-x837-3284",
+            "938-x837-3284"
+        ]
+    }))
+
     print("Adding reservation: ", addReservation({
         "id": "GIVEN TO BY ADDRES",
         "ti": generateDayStamp(),
-        "title": "A test reservation for testing!",
+        "title": "A test reservation for testing - that will cause conflict!",
         "created": "CHANGED WHEN ADDED TO DB",
         "wfor": "Bosley",
         "by": "A00167484",
-        "start": generateTimeSimestamp(),
-        "end": generateTimeSimestamp(),
+        "start": "08/03/2018 9:30 AM",
+        "end": "08/03/2018 7:30 PM",
         "status": "pending",
+        "retby": "na",
+        "email": "na",
         "itemBarcodes": [
             "938-x837-3284",
             "929-x837-3284"
@@ -175,9 +220,11 @@ if __name__ == '__main__':
         "created": "CHANGED WHEN ADDED TO DB",
         "wfor": "Bosley",
         "by": "A00167484",
-        "start": "20-02-2018:13-37-44",
-        "end": generateTimeSimestamp(),
+        "start": "07/03/2018 4:30 PM",
+        "end": "07/03/2018 6:30 PM",
         "status": "out",
+        "retby": "na",
+        "email": "na",
         "itemBarcodes": [
             "929-x837-3284"
         ]
@@ -189,8 +236,8 @@ if __name__ == '__main__':
         "title": "Feed the fish!",
         "created": "CHANGED WHEN ADDED TO DB",
         "desc": "Some lengthy description about how to feed the fish and who to call if help is needed",
-        "start": "20-02-2018:13-37-44",
-        "end": "20-02-2018:13-40-44",
+        "start": "10:30. Wed March 5 18",
+        "end": "14:30. Wed March 7 18",
         "by": "A00167484",
         "status": "incomplete"
     }))
