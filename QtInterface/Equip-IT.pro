@@ -33,7 +33,8 @@ SOURCES += main.cpp\
     dialogs/addbuilding.cpp \
     dialogs/reservationviewer.cpp \
     dialogs/finalizereservation.cpp \
-    dialogs/simplemessagebox.cpp
+    dialogs/simplemessagebox.cpp \
+    windows/errorresolver.cpp
 
 HEADERS  += windows/mainwindow.h \
     windows/basewindow.h \
@@ -57,7 +58,8 @@ HEADERS  += windows/mainwindow.h \
     dialogs/addbuilding.h \
     dialogs/reservationviewer.h \
     dialogs/finalizereservation.h \
-    dialogs/simplemessagebox.h
+    dialogs/simplemessagebox.h \
+    windows/errorresolver.h
 
 FORMS    += windows/mainwindow.ui \
     windows/basewindow.ui \
@@ -73,7 +75,8 @@ FORMS    += windows/mainwindow.ui \
     dialogs/addbuilding.ui \
     dialogs/reservationviewer.ui \
     dialogs/finalizereservation.ui \
-    dialogs/simplemessagebox.ui
+    dialogs/simplemessagebox.ui \
+    windows/errorresolver.ui
 
 DISTFILES += \
     Documentation/Data_Layout.md

@@ -3,7 +3,6 @@
 Ephimeral::Ephimeral(ContextManager *context, QWidget *parent) : QWidget(parent)
 {
     localContext = context;
-
     connect(localContext, SIGNAL(preparedDataReady(std::vector<DAMError>, std::vector<DAMAlienPackage>)),
             this, SLOT(preparedReturnedFromContext(std::vector<DAMError>, std::vector<DAMAlienPackage>)));
 }
@@ -12,7 +11,6 @@ Ephimeral::~Ephimeral()
 {
     localContext = 0;
 }
-
 
 /*
     Reservation - Setters
@@ -25,12 +23,24 @@ void Ephimeral::setReservationTimeRange(QDateTime start, QDateTime end)
 
 void Ephimeral::addItemToReservation(QString barcode)
 {
+    // Get out of here if you're not unique!
+    foreach(const QString &item, currentReservation.itemBarcodes)
+        if(item == barcode)
+            return;
     currentReservation.itemBarcodes.append(barcode);
 }
 
 void Ephimeral::removeItemFromReservationByBarcode(QString barcode)
 {
-    currentReservation.itemBarcodes.removeOne(barcode);
+    QStringList newItemList;
+    foreach(QString item, currentReservation.itemBarcodes)
+        if(item != barcode)
+        {
+            newItemList.append(item);
+        }
+
+    currentReservation.itemBarcodes.clear();
+    currentReservation.itemBarcodes = newItemList;
 }
 
 void Ephimeral::setReservationLocation(QString building, QString room)
@@ -48,6 +58,11 @@ void Ephimeral::setReservationEmail(QString email)
     currentReservation.email = email;
 }
 
+void Ephimeral::updateReservationStartTime(QDateTime newStart)
+{
+    currentReservation.start = dateTimeToString(newStart);
+}
+
 reservations Ephimeral::getCurrentReservation()
 {
     return currentReservation;
@@ -59,7 +74,6 @@ std::vector<reservableItems> Ephimeral::getItemsOnReservation()
     std::vector<reservableItems> allItems = localContext->getExistingItems();
     foreach(QString barcode, currentReservation.itemBarcodes)
     {
-
         for(auto i = allItems.begin(); i != allItems.end(); ++i)
         {
             if((*i).barcode == barcode)
@@ -104,9 +118,6 @@ void Ephimeral::finalizeReservation()
     // connection... or they can ignore it completly.
     if(errorReports.size() > 0)
     {
-
-        qDebug() << "Error caught: " << errorReports.size();
-
         throwNetworkErrors(NetworkCallerConfig(NetworkCallerOrigin::secondary, DAMStatus(errorReports,alienPackages),true));
     } else {
 
@@ -117,7 +128,6 @@ void Ephimeral::finalizeReservation()
 
 void Ephimeral::secureItemScheduleData()
 {
-
     std::vector<DAMOrigin> prepareCalls;
     foreach(QString barcode, currentReservation.itemBarcodes)
     {
@@ -136,7 +146,6 @@ void Ephimeral::secureItemScheduleData()
 
     // Call DAM to request
     localContext->prepareNetworkCalls(prepareCalls, WindowDescriptors::_non_window_ephimeral);
-
 
     // Block until data returned
     QTimer timer;
@@ -168,32 +177,40 @@ void Ephimeral::analyzeSchedule()
         for(auto j = (*i).sched.begin(); j != (*i).sched.end(); ++j)
         {
             scheduleConflict temp = (*j).checkForConflict(currentReservation.start, currentReservation.end);
-
             if(temp.exists)
                 existingConflicts.push_back(temp);
         }
     }
-
-    qDebug() << "There are [" << existingConflicts.size() << "] conflicts.";
 
     if(existingConflicts.size()>0)
     {
         emit invalidReservation(existingConflicts);
     } else {
         emit validReservation();
-        submitCompletedReservation();
     }
 }
 
 void Ephimeral::submitCompletedReservation()
 {
+
+
     // Push info to the server, and then like... kill self.
     // Error handling is cool too.
 
-    // Prune duplicate items (possible from quick scan)
-    currentReservation.itemBarcodes = currentReservation.itemBarcodes.toSet().toList();
 
-    qDebug() << "Submit the reservation !";
+
+    // Create request, and push. Hang until a response is sent back validating the push
+
+
+
+    // / / / / / WIll need a mechanism to determine if we are submitting a new res
+    // or if we are updating a current reservation. Ephimeral will be used for both as
+    // the same rules will apply !!!
+
+
+
+
+    qDebug() << "Ephimeral::submitCompletedReservation -> Submit the reservation !";
 }
 
 void Ephimeral::preparedReturnedFromContext(std::vector<DAMError> errors, std::vector<DAMAlienPackage> packages)
@@ -210,7 +227,7 @@ void Ephimeral::resendPreparedPackages()
 
 void Ephimeral::ignoreNetworkError()
 {
-    qDebug() << "Make a signal to tell caller that we can't connect or something, and the user wants to just give up.";
+    emit userMarkedIgnoreNetworkErrors();
 }
 
 void Ephimeral::throwNetworkErrors(NetworkCallerConfig callerConfig)

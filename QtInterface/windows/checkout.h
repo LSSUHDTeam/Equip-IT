@@ -59,7 +59,12 @@ signals:
     void closeChildren();
 
 public slots:
+
+    // Parent call
     void forceClose();
+
+    // Ephimeral signaled to ignore network error
+    void ephimeralNetworkErrorMarkedIgnore();
 
     // Keyboard data slots
     void keyboardClosed();
@@ -76,15 +81,13 @@ public slots:
 
     // Time frame returned
     void setTimeFrame(QDateTime start, QDateTime end);
-
     void setBuildingAndRoom(QString building, QString room);
 
 
     // Finalization Slots
     void reservationCompletedAndAcknowledged();
-
     void finalizeReservationForceClosed();
-
+    void finalizerEditedReservation();
 
 private slots:
     void on_viewItemsButton_clicked();

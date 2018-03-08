@@ -34,12 +34,13 @@ public:
     /*
         Reservation - Setters
     */
-    void setReservationTimeRange(QDateTime start, QDateTime end);
     void addItemToReservation(QString barcode);
     void removeItemFromReservationByBarcode(QString barcode);
+    void setReservationTimeRange(QDateTime start, QDateTime end);
     void setReservationLocation(QString building, QString room);
     void setReservationFor(QString);
     void setReservationEmail(QString);
+    void updateReservationStartTime(QDateTime newStart);
 
     /*
         Reservation - Getters
@@ -56,6 +57,14 @@ public:
     */
     void finalizeReservation();
 
+
+    /*
+        Server pushes - after the emittion of
+        'validReservation' by checkout.cpp
+        under 'reservationIsValid()'
+    */
+    void submitCompletedReservation();
+
 signals:
     // Emitted to self to stop a block
     void preparedReturned();
@@ -63,6 +72,9 @@ signals:
     // Thown when done checking for scheduling errors
     void validReservation();
     void invalidReservation(std::vector<scheduleConflict>);
+
+    // User wants to ignore network errors
+    void userMarkedIgnoreNetworkErrors();
 
 public slots:
     void preparedReturnedFromContext(std::vector<DAMError> errors, std::vector<DAMAlienPackage> packages);
@@ -98,10 +110,6 @@ private:
     std::vector<scheduleConflict> existingConflicts;
     void analyzeSchedule();
 
-    /*
-        Server pushes
-    */
-    void submitCompletedReservation();
 
 
 };

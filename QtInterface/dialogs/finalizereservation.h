@@ -2,9 +2,12 @@
 #define FINALIZERESERVATION_H
 
 #include <QMap>
+#include <QFont>
+#include <QDebug>
 #include <QDialog>
 #include <QCloseEvent>
 #include <QResizeEvent>
+#include "windows/errorresolver.h"
 #include "framework/ephimeral.h"
 
 namespace Ui {
@@ -18,6 +21,10 @@ class FinalizeReservation : public QDialog
 public:
     explicit FinalizeReservation(Ephimeral *currentRes, QWidget *parent = 0);
     ~FinalizeReservation();
+public slots:
+    void removeItemFromReservation(int conflictMapIndex);
+
+    void changeEndTimeToEarliestRequiredEndTime(QDateTime newDateTime);
 
 private slots:
 
@@ -31,9 +38,12 @@ private slots:
 
     void on_completeButton_clicked();
 
+    void on_reportTable_itemSelectionChanged();
+
 signals:
     void forceClosed();
 
+    void conflictFlipped();
 
 private:
     Ui::FinalizeReservation *ui;
@@ -47,6 +57,9 @@ private:
     QStringList tableHeaders;
     void setupTable();
     void buildTable();
+
+    int currentSelection;
+    void launchResolver();
 
     void resizeEvent(QResizeEvent *);
     void closeEvent(QCloseEvent *);

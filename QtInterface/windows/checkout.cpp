@@ -21,6 +21,8 @@ CheckOut::CheckOut(ContextManager *context, CheckoutType mode, QWidget *parent) 
             this, SLOT(reservationIsInvalid(std::vector<scheduleConflict>)));
     connect(ephimeralReservation, SIGNAL(validReservation()),
             this, SLOT(reservationIsValid()));
+    connect(ephimeralReservation, SIGNAL(userMarkedIgnoreNetworkErrors()),
+            this, SLOT(ephimeralNetworkErrorMarkedIgnore));
 
     // Log current mode
     switch(checkoutMode){
@@ -92,6 +94,12 @@ void CheckOut::closeEvent(QCloseEvent *event)
 void CheckOut::forceClose()
 {
     shutdownWindow();
+}
+
+void CheckOut::ephimeralNetworkErrorMarkedIgnore()
+{
+    ui->errorLabel->setText("Network error ignored.");
+    localContext->addUserCrumb("User ignored network errors from ephimeral");
 }
 
 /*
@@ -272,6 +280,22 @@ void CheckOut::finalizeReservationForceClosed()
     localContext->addUserCrumb("Finalizer was force closed", true);
 }
 
+void CheckOut::finalizerEditedReservation()
+{
+    localContext->addUserCrumb("Finalizer edited reservation, rechecking reservation.");
+
+    if(ephimeralReservation->getItemsOnReservation().size() > 0)
+    {
+        ephimeralReservation->finalizeReservation();
+    }
+    else
+    {
+        itemsSet = false;
+        ui->statusbar->showMessage("Reservation no longer contains any items.");
+        ui->completeReservationButton->setEnabled(false);
+    }
+}
+
 /*
 
     Location management
@@ -294,7 +318,6 @@ void CheckOut::on_locationButton_clicked()
 */
 void CheckOut::on_timeButton_clicked()
 {
-
     switch(checkoutMode){
     case CheckoutType::BuilderCheckout:
     {
@@ -341,6 +364,9 @@ void CheckOut::on_completeReservationButton_clicked()
 
 void CheckOut::reservationIsValid()
 {
+    localContext->addUserCrumb("Reservation deemed valid, pushing to server");
+    ephimeralReservation->submitCompletedReservation();
+
     localContext->addUserCrumb("Valid reservation created");
     QStringList message;
     message << "\n\n\tThe reservation request has been posted to the server!" <<
@@ -360,9 +386,7 @@ void CheckOut::reservationIsInvalid(std::vector<scheduleConflict> schedulingConf
     FinalizeReservation *fr = new FinalizeReservation(ephimeralReservation, this);
     connect(this, SIGNAL(closeChildren()), fr, SLOT(forceClose()));
     connect(fr, SIGNAL(forceClosed()), this, SLOT(finalizeReservationForceClosed()));
-
-    // Add connection for completion thing here
-
+    connect(fr, SIGNAL(conflictFlipped()), this, SLOT(finalizerEditedReservation()));
     fr->setAttribute(Qt::WA_DeleteOnClose, true);
     fr->showMaximized();
     localContext->addUserCrumb("Reservation conflict manager opened.");
