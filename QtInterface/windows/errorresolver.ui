@@ -205,6 +205,19 @@ Reservation
          </property>
         </spacer>
        </item>
+       <item>
+        <widget class="QPushButton" name="timeEditButton">
+         <property name="minimumSize">
+          <size>
+           <width>380</width>
+           <height>130</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Launch Time Editor</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
     </item>

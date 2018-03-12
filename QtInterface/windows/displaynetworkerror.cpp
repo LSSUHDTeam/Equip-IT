@@ -103,7 +103,7 @@ void DisplayNetworkError::setupStandard()
         ui->errorOutput->insertPlainText("to automated recurring operations such-as pulling daily reservations,\n");
         ui->errorOutput->insertPlainText("items and reminders from the server. If you see this message, it is not\n");
         ui->errorOutput->insertPlainText("because the software is 'broken' it is because contact to the server\n");
-        ui->errorOutput->insertPlainText("[" + QString(WEB_SERVER_ADDRESS) + "] is being blocked, or interrupted.\n\n");
+        ui->errorOutput->insertPlainText("[" + QString(WEB_SERVER_FETCH_ADDRESS) + "] is being blocked, or interrupted.\n\n");
     }
 }
 

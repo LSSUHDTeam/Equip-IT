@@ -45,6 +45,11 @@ std::vector<reservableItems> ContextManager::getExistingItems()
     return dam.getAllItems();
 }
 
+reservableItems ContextManager::getItemByBarcode(QString barcode)
+{
+    return dam.getItemByBarcode(barcode);
+}
+
 
 DAMError ContextManager::updateItemPeriphs(QString barcode, std::vector<peripherals> newPeriphs)
 {

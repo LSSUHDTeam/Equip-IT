@@ -26,6 +26,8 @@ public slots:
 
     void changeEndTimeToEarliestRequiredEndTime(QDateTime newDateTime);
 
+    void changeTimeFrameOfReservaton(QDateTime start, QDateTime end);
+
 private slots:
 
     void forceClose();

@@ -195,40 +195,40 @@ if __name__ == '__main__':
         ]
     }))
 
-    print("Adding reservation: ", addReservation({
-        "id": "GIVEN TO BY ADDRES",
-        "ti": generateDayStamp(),
-        "title": "A test reservation for testing - that will cause conflict!",
-        "created": "CHANGED WHEN ADDED TO DB",
-        "wfor": "Bosley",
-        "by": "A00167484",
-        "start": "08/03/2018 9:30 AM",
-        "end": "08/03/2018 7:30 PM",
-        "status": "pending",
-        "retby": "na",
-        "email": "na",
-        "itemBarcodes": [
-            "938-x837-3284",
-            "929-x837-3284"
-        ]
-    }))
+    # print("Adding reservation: ", addReservation({
+    #     "id": "GIVEN TO BY ADDRES",
+    #     "ti": generateDayStamp(),
+    #     "title": "A test reservation for testing - that will cause conflict!",
+    #     "created": "CHANGED WHEN ADDED TO DB",
+    #     "wfor": "Bosley",
+    #     "by": "A00167484",
+    #     "start": "08/03/2018 9:30 AM",
+    #     "end": "08/03/2018 7:30 PM",
+    #     "status": "pending",
+    #     "retby": "na",
+    #     "email": "na",
+    #     "itemBarcodes": [
+    #         "938-x837-3284",
+    #         "929-x837-3284"
+    #     ]
+    # }))
 
-    print("Adding reservation: ", addReservation({
-        "id": "GIVEN TO BY ADDRES",
-        "ti": generateDayStamp(),
-        "title": "A test reservation for testing!",
-        "created": "CHANGED WHEN ADDED TO DB",
-        "wfor": "Bosley",
-        "by": "A00167484",
-        "start": "07/03/2018 4:30 PM",
-        "end": "07/03/2018 6:30 PM",
-        "status": "out",
-        "retby": "na",
-        "email": "na",
-        "itemBarcodes": [
-            "929-x837-3284"
-        ]
-    }))
+    # print("Adding reservation: ", addReservation({
+    #     "id": "GIVEN TO BY ADDRES",
+    #     "ti": generateDayStamp(),
+    #     "title": "A test reservation for testing!",
+    #     "created": "CHANGED WHEN ADDED TO DB",
+    #     "wfor": "Bosley",
+    #     "by": "A00167484",
+    #     "start": "12/03/2018 5:30 PM",
+    #     "end": "13/03/2018 6:30 PM",
+    #     "status": "out",
+    #     "retby": "na",
+    #     "email": "na",
+    #     "itemBarcodes": [
+    #         "929-x837-3284"
+    #     ]
+    # }))
 
     print("Adding reminder: ", addReminder({
         "id": "0000",

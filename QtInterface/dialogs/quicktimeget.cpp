@@ -6,6 +6,7 @@ QuickTimeGet::QuickTimeGet(QWidget *parent) :
     ui(new Ui::QuickTimeGet)
 {
     ui->setupUi(this);
+    flipmins = false;
     endDate = QDate::currentDate();
     endTime = QTime::currentTime();
     ui->timeEdit->setTime(endTime);
@@ -37,12 +38,26 @@ void QuickTimeGet::on_timeEdit_timeChanged(const QTime &time)
     endTime = time;
     updateLabel();
 
+    if(time.toString("mm") == "59")
+    {
+        ui->label->setText("Use 'MIN' to reset minutes.");
+        flipmins = true;
+    }
 }
 
 void QuickTimeGet::on_completeButton_clicked()
 {
+    QDateTime start = QDateTime(QDate::currentDate(), QTime::currentTime());
+    QDateTime end = QDateTime(endDate, endTime);
+
+    if(start >= end)
+    {
+        ui->label->setText("Invalid Time Frame");
+        return;
+    }
+
     completed = true;
-    emit setDateTimeRange(QDateTime(QDate::currentDate(), QTime::currentTime()), QDateTime(endDate, endTime));
+    emit setDateTimeRange(start, end);
     this->close();
 }
 
@@ -76,4 +91,9 @@ void QuickTimeGet::on_minuteButton_clicked()
 {
     ui->timeEdit->setCurrentSectionIndex(1);
     ui->editingLabel->setText("Editing 'Minute'");
+    if (flipmins)
+    {
+        flipmins = false;
+        ui->timeEdit->setTime(QTime::fromString( ui->timeEdit->time().toString("hh") + ":00", "hh:mm" ));
+    }
 }

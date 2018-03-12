@@ -1,8 +1,8 @@
 
 import json
 import gherkindb
-
 from datetime import datetime
+from hashlib import sha256
 
 '''
     Auth
@@ -27,7 +27,7 @@ def generateTimeSimestamp():
     return datetime.now().strftime("%d/%m/%Y {}:%M %p").format(str(int(datetime.now().strftime("%I"))))
 
 def generateDayStamp():
-    return datetime.now().strftime("%d-%Y")
+    return datetime.now().strftime("%d/%m/%Y")
 
 
 '''
@@ -200,7 +200,6 @@ def schedroute(environ, start_response):
             resp = getSchedules()
         elif classifier == "single":
             barcode = params.get('id')
-            print(barcode)
             if barcode is None:
                 resp = generateError("Parameter Error", "Invalid or missing id in /schedule")
             else:
@@ -316,6 +315,97 @@ def catroute(environ, start_response):
         ---------------------------- UPDATERS ----------------------------
     
 '''
+def addToSchedule(item_barcode, res_id, start, end):
+
+    sid = sha256(
+        ( res_id + item_barcode + start + end ).encode()
+        ).hexdigest()
+
+    db = gherkindb.load("databases/schedules.db", True)
+
+    # Items make their own schedule lists, but just in-case
+    # we do a None check
+    if db.get(item_barcode) is None:
+        db.lcreate(item_barcode)
+
+    db.ladd(item_barcode, {
+        "sid": sid,
+        "resid": res_id,
+        "start": start,
+        "end": end
+    })
+    return sid
+
+def addReservation(res_dict):
+    if not isinstance(res_dict, dict):
+        return -1
+    dbti = gherkindb.load("databases/res_ti.db", True)
+    dbid = gherkindb.load("databases/res_id.db", True)
+    dbresid = gherkindb.load("databases/uniqueids.db", True)
+
+    # Reservation already exists - This isn't an edit function
+    if dbid.get(res_dict["id"]) is not None:
+        return -2
+
+    # Obtain a new reservation id
+    new_res_id = dbresid.get("next_res_id")
+    if new_res_id is None:
+        new_res_id = 0
+    dbresid.set("next_res_id", new_res_id+1)
+    new_res_id = str(new_res_id)
+
+    res_dict["id"] = new_res_id
+    res_dict["created"] = generateTimeSimestamp()
+
+    # Add to the comprehensive db
+    dbid.set(res_dict["id"], res_dict)
+
+    # Time-indexed db will have multiple (potentially) per-day
+    # If it doesn't exist, we need to make a list
+    res_dict["ti"] = generateDayStamp()
+    if dbti.get(res_dict["ti"]) is None:
+        dbti.lcreate(res_dict["ti"])
+    
+    # Add the teservation to the time-indexed db
+    dbti.ladd(res_dict["ti"], res_dict)
+
+    # Schedule the device to be out for the time
+    for item in res_dict["itemBarcodes"]:
+        addToSchedule(item, res_dict["id"], res_dict["start"], res_dict["end"])
+
+    return 0
+
+def editReservation(res_dict):
+    return -100
+
+''' Add or update a reservation '''
+def handleReservationAddOrUpdate(resdata):
+
+    try:
+        resdata = json.loads(resdata)
+    except:
+        return generateError("JSON Error", "Json unable to loads reservation data.")
+
+    result = None
+    try:
+        if resdata["id"] == "NEW":
+            result = addReservation(resdata)
+        else:
+            result = editReservation(resdata)
+    except KeyError as e:
+        print("\n\n", resdata, "\n\n", e, "\n\n")
+        return generateError("Key Error", "Key error present in reservation dict.")
+
+    if result is None:
+        return generateError("DICT Error", "Malformed reservation dictionary.")
+    elif result == -2:
+        return generateError("Route Error", "An existing reservation's data routed to addRes.")
+    elif result == -100:
+        return generateError("Construction Error", "Method under construction")
+    elif result == 0:
+        return "Reservation action completed."
+    else:
+        return generateError("Route Error", "Unhandled /upres case.")
 
 
 ''' Handles /upres calls '''
@@ -323,13 +413,16 @@ def updateReservation(environ, start_response):
     start_response('200 OK', [('Content-type', 'text/plain')])
     params = environ['params']
     token = params.get('token')
-    updict = params.get('update')
+    datadict = params.get('data')
     if token is None:
         resp = generateError("Unauthorized", "No token supplied")
     elif authRequest(token) is False:
         resp = generateError("Unauthorized", "Incorrect token")
     else:
-        resp = generateError("UNDER CONSTRUCTION","Not yet done! Stay POSTed! ")
+        if datadict is None:
+            resp = generateError("Invalid Reservation Data", "No data dictionary detected.")
+        else:
+            resp = handleReservationAddOrUpdate(datadict)
     try:
         resp = resp.encode('utf-8')
     except AttributeError:

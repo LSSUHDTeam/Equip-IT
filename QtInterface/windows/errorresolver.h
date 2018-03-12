@@ -4,6 +4,7 @@
 #include <QMap>
 #include <QMainWindow>
 #include "framework/structures.h"
+#include "dialogs/quicktimeget.h"
 
 namespace Ui {
 class ErrorResolver;
@@ -22,11 +23,17 @@ public:
 signals:
     void removeItem(int index);
     void changeEndTime(QDateTime earliestTime);
+    void changeTimeFrame(QDateTime start, QDateTime end);
+
+public slots:
+    void quickTimeChanged(QDateTime s, QDateTime e);
 
 private slots:
     void on_removeItem_clicked();
 
     void on_moveUpTimeButton_clicked();
+
+    void on_timeEditButton_clicked();
 
 private:
     Ui::ErrorResolver *ui;
@@ -37,6 +44,7 @@ private:
     void setupWindow();
     void configureTimeOverlap();
     void configureEndTimeOverlap();
+    void configureInvalidReservation();
 };
 
 #endif // ERRORRESOLVER_H

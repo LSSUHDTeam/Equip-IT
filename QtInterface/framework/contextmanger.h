@@ -37,6 +37,7 @@ public:
         DAM Getters
     */
     std::vector<reservableItems> getExistingItems();
+    reservableItems getItemByBarcode(QString barcode);
 
     /*
         DAM Local Data Setters

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1113</width>
-    <height>794</height>
+    <height>918</height>
    </rect>
   </property>
   <property name="font">
@@ -149,7 +149,7 @@
          <property name="minimumSize">
           <size>
            <width>500</width>
-           <height>150</height>
+           <height>160</height>
           </size>
          </property>
          <property name="font">
@@ -252,8 +252,6 @@
          </widget>
         </item>
        </layout>
-       <zorder>horizontalLayoutWidget_2</zorder>
-       <zorder>editingLabel</zorder>
       </widget>
      </item>
      <item>

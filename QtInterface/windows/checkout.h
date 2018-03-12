@@ -83,11 +83,13 @@ public slots:
     void setTimeFrame(QDateTime start, QDateTime end);
     void setBuildingAndRoom(QString building, QString room);
 
-
     // Finalization Slots
     void reservationCompletedAndAcknowledged();
     void finalizeReservationForceClosed();
     void finalizerEditedReservation();
+
+    // Reservation submitted
+    void showSubmitSuccess();
 
 private slots:
     void on_viewItemsButton_clicked();
@@ -130,6 +132,7 @@ private:
     void bringUpKeyboard();
 
     void checkForViewEnable();
+
 };
 
 #endif // CHECKOUT_H

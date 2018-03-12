@@ -36,7 +36,15 @@ void FinalizeReservation::removeItemFromReservation(int conflictMapIndex)
 
 void FinalizeReservation::changeEndTimeToEarliestRequiredEndTime(QDateTime newDateTime)
 {
-    ephimeral->updateReservationStartTime(newDateTime);
+    ephimeral->updateReservationEndTime(newDateTime);
+
+    emit conflictFlipped();
+    this->close();
+}
+
+void FinalizeReservation::changeTimeFrameOfReservaton(QDateTime start, QDateTime end)
+{
+    ephimeral->setReservationTimeRange(start, end);
 
     emit conflictFlipped();
     this->close();
@@ -93,6 +101,10 @@ void FinalizeReservation::buildTable()
             cellFont.setItalic(true);
             cont->setText("Item due back early");
             break;
+        case ScheduleConflictTypes::invalidReservationTime:
+            cellFont.setItalic(true);
+            cont->setText("Invalid reservation time");
+            break;
         }
         cont->setFont(cellFont);
         cont->setFlags(cont->flags() ^ Qt::ItemIsEditable);
@@ -136,26 +148,13 @@ void FinalizeReservation::on_reportTable_doubleClicked(const QModelIndex &index)
 
 void FinalizeReservation::on_resolveError_clicked()
 {
-    /*
-
-        CREATE A MECHANISM TO CLOSE THIS WINDOW, TRIGGER CALLER TO RE-CALL EPHIMERAL FINALIZER.
-        WE WANT TO RE-CALL FROM PARENT TO ENSURE THAT THE EXISITNG SIGNALS BOUND TO EPHIMERAL ARE
-        HANDLED CORRECTLY. IDEALLY, IF ANY MORE ERRORS EXIST ONCE THIS WINDOW IS CLOSED, THE PARENT
-        WILL RE-OPEN IT PRESENTING THE NEW OR STILL-EXISITNG ERRORS
-
-
-        MAKE IT SO THAT WHEN AN ITEM IS CLICKED, OR MAYBE EVEN ON THE MAIN TABLE, A TIME OF
-        'NEXT AVAIAILABLE' AND FOR HOW LONG IS LISTED.
-
-    */
-
-    qDebug() << "Opening conflict resolver";
-
     ErrorResolver *er = new ErrorResolver(currentSelection, tableConflictMap);
     connect(er, SIGNAL(changeEndTime(QDateTime)),
             this, SLOT(changeEndTimeToEarliestRequiredEndTime(QDateTime)));
     connect(er, SIGNAL(removeItem(int)),
             this, SLOT(removeItemFromReservation(int)));
+    connect(er, SIGNAL(changeTimeFrame(QDateTime,QDateTime)),
+            this, SLOT(changeTimeFrameOfReservaton(QDateTime,QDateTime)));
     er->setAttribute(Qt::WA_DeleteOnClose, true);
     er->showMaximized();
 }

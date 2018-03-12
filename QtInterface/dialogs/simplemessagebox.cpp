@@ -10,7 +10,7 @@ SimpleMessageBox::SimpleMessageBox(smbdata messageData, QWidget *parent) :
     ui->titleLabel->setText(messageData.title);
     foreach(QString line, messageData.messageData)
     {
-        ui->messageText->insertPlainText(line);
+        ui->messageText->insertPlainText(line + "\n");
     }
 }
 

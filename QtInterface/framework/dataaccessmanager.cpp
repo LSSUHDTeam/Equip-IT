@@ -43,13 +43,13 @@ DataAccessManager::DataAccessManager(QObject *parent) : QObject(parent)
 
     // QUrl has the ability to '.addQuery' and build urls, but the ones we use are few,
     // and won't change
-    requestMap["getAllItems"] = QUrl(QString(WEB_SERVER_ADDRESS)+"/items?classifier=all&token=" + apiToken);
-    requestMap["getSchedules"] = QUrl(QString(WEB_SERVER_ADDRESS)+"/schedules?classifier=all&token=" + apiToken);
-    requestMap["getTodaysRes"] = QUrl(QString(WEB_SERVER_ADDRESS)+"/reservations?frame=today&token=" + apiToken);
-    requestMap["getAllRes"] = QUrl(QString(WEB_SERVER_ADDRESS)+"/reservations?frame=all&token=" + apiToken);
-    requestMap["getTodaysRem"] = QUrl(QString(WEB_SERVER_ADDRESS)+"/reminders?frame=today&token=" + apiToken);
-    requestMap["getAllRem"] = QUrl(QString(WEB_SERVER_ADDRESS)+"/reminders?frame=all&token=" + apiToken);
-    requestMap["getAllCats"] = QUrl(QString(WEB_SERVER_ADDRESS)+"/cats?token=" + apiToken);
+    requestMap["getAllItems"] = QUrl(QString(WEB_SERVER_FETCH_ADDRESS)+"/items?classifier=all&token=" + apiToken);
+    requestMap["getSchedules"] = QUrl(QString(WEB_SERVER_FETCH_ADDRESS)+"/schedules?classifier=all&token=" + apiToken);
+    requestMap["getTodaysRes"] = QUrl(QString(WEB_SERVER_FETCH_ADDRESS)+"/reservations?frame=today&token=" + apiToken);
+    requestMap["getAllRes"] = QUrl(QString(WEB_SERVER_FETCH_ADDRESS)+"/reservations?frame=all&token=" + apiToken);
+    requestMap["getTodaysRem"] = QUrl(QString(WEB_SERVER_FETCH_ADDRESS)+"/reminders?frame=today&token=" + apiToken);
+    requestMap["getAllRem"] = QUrl(QString(WEB_SERVER_FETCH_ADDRESS)+"/reminders?frame=all&token=" + apiToken);
+    requestMap["getAllCats"] = QUrl(QString(WEB_SERVER_FETCH_ADDRESS)+"/cats?token=" + apiToken);
 
     updateLocalInformation(WindowDescriptors::_non_window_DAM);
 }
@@ -528,6 +528,21 @@ std::vector<schedule> DataAccessManager::jsonToSchedData(QString data)
 std::vector<reservableItems> DataAccessManager::getAllItems()
 {
     return existingItems;
+}
+
+reservableItems DataAccessManager::getItemByBarcode(QString barcode)
+{
+    for(auto i = existingItems.begin(); i!= existingItems.end(); ++i)
+    {
+        if((*i).barcode == barcode)
+        {
+            return (*i);
+        }
+    }
+    reservableItems err;
+    err.name = "Barcode not found";
+    err.barcode = "error";
+    return err;
 }
 
 /*

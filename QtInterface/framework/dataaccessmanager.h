@@ -24,7 +24,8 @@
 #include "structures.h"
 #include "windowdescriptors.h"
 
-#define WEB_SERVER_ADDRESS "http://localhost:8080"
+#define WEB_SERVER_FETCH_ADDRESS "http://localhost:8080"
+#define WEB_SERVER_UPDATE_ADDRESS "http://localhost:9090"
 #define WEB_SERVER_APITOKEN "fefd8a1a97021dbab2d105c4784a1906cd89fc575009387d378b8807192c16e3"
 
 enum class respDataTypes{
@@ -185,6 +186,7 @@ public:
         Getters
     */
     std::vector<reservableItems> getAllItems();
+    reservableItems getItemByBarcode(QString barcode);
 
     /*
 

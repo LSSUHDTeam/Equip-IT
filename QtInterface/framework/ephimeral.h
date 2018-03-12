@@ -19,14 +19,16 @@
 
 enum class EphimeralStage{
     BuildingReservation,
-    BuildingReminder
+    BuildingReminder,
+    EditingReservation,
+    EditingReminder
 };
 
 class Ephimeral : public QWidget
 {
     Q_OBJECT
 public:
-    explicit Ephimeral(ContextManager *context, QWidget *parent = 0);
+    explicit Ephimeral(ContextManager *context, EphimeralStage stage, QWidget *parent = 0);
     ~Ephimeral();
 
     void clearReservation();
@@ -41,6 +43,7 @@ public:
     void setReservationFor(QString);
     void setReservationEmail(QString);
     void updateReservationStartTime(QDateTime newStart);
+    void updateReservationEndTime(QDateTime newEnd);
 
     /*
         Reservation - Getters
@@ -76,6 +79,9 @@ signals:
     // User wants to ignore network errors
     void userMarkedIgnoreNetworkErrors();
 
+    // Emitted once valid reservation is submitted, or fails
+    void submitSuccess();
+
 public slots:
     void preparedReturnedFromContext(std::vector<DAMError> errors, std::vector<DAMAlienPackage> packages);
 
@@ -84,17 +90,20 @@ public slots:
 
 private:
     ContextManager *localContext;
+    EphimeralStage currentStage;
 
     /*
         General helpers for class
     */
     QString dateTimeToString(QDateTime dt);
     QDateTime stringToDateTime(QString dt);
+    QString generateTimeIndex(QString startDateTime);
 
     /*
         Reservation building
     */
     reservations currentReservation;
+    reservedReminders currentReminder;
 
     /*
         Schedule Pulling
@@ -111,7 +120,10 @@ private:
     void analyzeSchedule();
 
 
-
+    /*
+        Network call
+    */
+    void executePreparedCalls(std::vector<DAMOrigin> calls);
 };
 
 #endif // EPHIMERAL_H

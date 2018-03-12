@@ -11,6 +11,7 @@
 #define MINUTES_BEFORE_RES_ALERT 10
 #define MINUTES_TIME_BUFFER 30
 #define DATETIME_FORMAT "dd/MM/yyyy h:mm AP"
+#define DB_TIME_INDEX "dd/MM/yyyy"
 
 // Small things that get coupled with reservables, but aren't kept track of
 struct peripherals {
@@ -28,6 +29,14 @@ struct peripherals {
     {
         return (name == other.name);
     }
+
+    QString exportJson()
+    {
+        return "{\"name\": \""+ name + "\"," +
+                "\"desc\": \""+ desc + "\"," +
+                "\"count\": "+ QString::number(count) + "," +
+                "\"numberpresent\": "+ QString::number(numberpresent) + "}";
+    }
 };
 
 // Valuable things that are reserverd
@@ -42,11 +51,31 @@ struct reservableItems {
         periphs = other.periphs;
         return *this;
     }
+
+    QString compilePeriphs()
+    {
+        QString result;
+        for(auto i = periphs.begin(); i != periphs.end(); ++i)
+        {
+            result = result + (*i).exportJson() + ",";
+        }
+        result = result.mid(0, result.length()-1);
+        return result;
+    }
+
+    QString exportJson()
+    {
+        return "{\"barcode\": \"" + barcode + "\"," +
+                "\"name\": \"" + name + "\"," +
+                "\"desc\": \"" + desc + "\"," +
+                "\"periphs\": [" + compilePeriphs() + "]}";
+    }
 };
 
 // Item schedule info
 struct scheduleEntry{
     QString sid, start, end, resid;
+    scheduleEntry(){}
     scheduleEntry& operator=(const scheduleEntry &other)
     {
         sid = other.sid; start = other.start; end = other.end;
@@ -58,6 +87,7 @@ struct scheduleEntry{
 enum class ScheduleConflictTypes{
     startTimeOverlap,
     endTimeOverlap,
+    invalidReservationTime
 
 };
 
@@ -120,12 +150,25 @@ struct schedule{
         QDateTime dt_start = QDateTime::fromString(start, QString(DATETIME_FORMAT));
         QDateTime dt_end = QDateTime::fromString(end, QString(DATETIME_FORMAT));
 
-        qDebug() << "END TIME : " << end;
+
+        if(dt_start >= dt_end)
+        {
+            return scheduleConflict(scheduleid, dt_start, dt_end,
+                                    scheduleEntry(), ScheduleConflictTypes::invalidReservationTime);
+        }
+
 
         for(auto i = scheduleInformation.begin(); i!= scheduleInformation.end(); ++i)
         {
             QDateTime dummy_start = QDateTime::fromString((*i).start, QString(DATETIME_FORMAT));
             QDateTime dummy_end = QDateTime::fromString((*i).end, QString(DATETIME_FORMAT));
+
+/*
+            qDebug() << "\n\nRequested Reservation Start: " << start << ". " << dt_start.isValid();
+            qDebug() << "Requested Reservation End: " << end << ". " << dt_end.isValid();
+            qDebug() << "'OTHER' Reservation Start: " << (*i).start << ". " << dummy_start.isValid();
+            qDebug() << "'OTHER' Reservation End: " << (*i).end << ". " << dummy_end.isValid();
+*/
 
             // Ensure that the item is available before the reservaion by 'MINUTES_TIME_BUFFER' minutes
             dummy_start.addSecs(MINUTES_TIME_BUFFER * 60);
@@ -138,7 +181,7 @@ struct schedule{
                 return scheduleConflict(scheduleid, dummy_start, dummy_end,
                                         (*i), ScheduleConflictTypes::startTimeOverlap);
             }
-            if(dt_start < dummy_start && dt_end > dummy_end)
+            if(dt_start < dummy_start && dt_end > dummy_start)
             {
                 qDebug() << "CONFLICT:endTimeOverlap " << "REQSTART: " << start <<
                             "REQEND: " << end <<
@@ -156,6 +199,34 @@ struct reservations {
     QString id, ti, title, created, wfor, by,
                 start, end, status, retby, email;
     QStringList itemBarcodes;
+
+    QString compileItemBarcodes()
+    {
+        QString result;
+        foreach(QString item, itemBarcodes)
+        {
+            result = result +
+                    "\"" + item + "\",";
+        }
+        result = result.mid(0, result.length()-1);
+        return result;
+    }
+
+    QString exportJson()
+    {
+        return "{\"id\": \"" + id +
+                "\", \"ti\":\"" + ti + "\"," +
+                " \"title\": \"" + title + "\"," +
+                " \"created\":\""+ created + "\", " +
+                " \"wfor\": \""+ wfor + "\", " +
+                " \"by\": \""+ by + "\", " +
+                " \"start\": \""+ start + "\", " +
+                " \"end\": \""+ end + "\", " +
+                " \"status\": \""+ status + "\", " +
+                " \"retby\": \""+ retby + " \", " +
+                " \"email\": \""+ email + " \", " +
+                " \"itemBarcodes\":["+ compileItemBarcodes() + "]}";
+    }
 };
 
 // Reminders!

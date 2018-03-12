@@ -14,7 +14,7 @@ CheckOut::CheckOut(ContextManager *context, CheckoutType mode, QWidget *parent) 
     // Operation dependencies
     localContext = context;
     checkoutMode = mode;
-    ephimeralReservation = new Ephimeral(localContext, this);
+    ephimeralReservation = new Ephimeral(localContext, EphimeralStage::BuildingReservation, this);
 
     // Response to validation checking
     connect(ephimeralReservation, SIGNAL(invalidReservation(std::vector<scheduleConflict>)),
@@ -22,7 +22,9 @@ CheckOut::CheckOut(ContextManager *context, CheckoutType mode, QWidget *parent) 
     connect(ephimeralReservation, SIGNAL(validReservation()),
             this, SLOT(reservationIsValid()));
     connect(ephimeralReservation, SIGNAL(userMarkedIgnoreNetworkErrors()),
-            this, SLOT(ephimeralNetworkErrorMarkedIgnore));
+            this, SLOT(ephimeralNetworkErrorMarkedIgnore()));
+    connect(ephimeralReservation, SIGNAL(submitSuccess()),
+            this, SLOT(showSubmitSuccess()));
 
     // Log current mode
     switch(checkoutMode){
@@ -272,7 +274,7 @@ void CheckOut::setBuildingAndRoom(QString building, QString room)
 
 void CheckOut::reservationCompletedAndAcknowledged()
 {
-
+    this->close();
 }
 
 void CheckOut::finalizeReservationForceClosed()
@@ -294,6 +296,20 @@ void CheckOut::finalizerEditedReservation()
         ui->statusbar->showMessage("Reservation no longer contains any items.");
         ui->completeReservationButton->setEnabled(false);
     }
+}
+
+void CheckOut::showSubmitSuccess()
+{
+    localContext->addUserCrumb("Valid reservation created");
+    QStringList message;
+    message << "\n\n\tThe reservation request has been posted to the server! " <<
+               "Once you close this message (OKAY), you will be returned to the " <<
+               "primary Equip-IT window.";
+    SimpleMessageBox *smb = new SimpleMessageBox(smbdata("Checkout", "Valid Reservation", message), this);
+    connect(this, SIGNAL(closeChildren()), smb, SLOT(forceClose()));
+    connect(smb, SIGNAL(messageBoxClosed()), this, SLOT(reservationCompletedAndAcknowledged()));
+    smb->setAttribute(Qt::WA_DeleteOnClose, true);
+    smb->show();
 }
 
 /*
@@ -366,17 +382,6 @@ void CheckOut::reservationIsValid()
 {
     localContext->addUserCrumb("Reservation deemed valid, pushing to server");
     ephimeralReservation->submitCompletedReservation();
-
-    localContext->addUserCrumb("Valid reservation created");
-    QStringList message;
-    message << "\n\n\tThe reservation request has been posted to the server!" <<
-               "Once you close this message (OKAY), you will be returned to the" <<
-               "primary Equip-IT window.";
-    SimpleMessageBox *smb = new SimpleMessageBox(smbdata("Checkout", "Valid Reservation", message), this);
-    connect(this, SIGNAL(closeChildren()), smb, SLOT(forceClose()));
-    connect(smb, SIGNAL(messageBoxClosed()), this, SLOT(reservationCompletedAndAcknowledged()));
-    smb->setAttribute(Qt::WA_DeleteOnClose, true);
-    smb->show();
 }
 
 void CheckOut::reservationIsInvalid(std::vector<scheduleConflict> schedulingConflicts)
@@ -395,9 +400,12 @@ void CheckOut::reservationIsInvalid(std::vector<scheduleConflict> schedulingConf
 // Testing is cool i guess.
 void CheckOut::on_testLoadingButton_clicked()
 {
+    QDateTime start = QDateTime::currentDateTime();
+    QDateTime end = start.addDays(1);
+
     ephimeralReservation->addItemToReservation("938-x837-3284");
     ephimeralReservation->addItemToReservation("929-x837-3284");
-    ephimeralReservation->setReservationTimeRange(QDateTime::currentDateTime(), QDateTime::currentDateTime().addDays(1));
+    ephimeralReservation->setReservationTimeRange(start, end);
     ephimeralReservation->setReservationFor("Josh Tester");
     ephimeralReservation->setReservationEmail("jbosley2@lssu.edu");
     ui->completeReservationButton->setEnabled(true);

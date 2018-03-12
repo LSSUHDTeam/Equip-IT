@@ -21,12 +21,23 @@ __author__ = 'Josh Allen Bosley'
 import cgi
 import threading
 from time import sleep
-from wsgiref.simple_server import make_server
+from wsgiref.simple_server import make_server, WSGIServer
 from equipit import *
+from socketserver import ThreadingMixIn
+from urllib.request import urlopen
 
 def notfound_404(environ, start_response):
     start_response('404 Not Found', [('Content-type', 'text/plain')])
     return [generateError("[404] Request error", "This is not the page you're looking for.").encode()]
+
+def nullrequest(address):
+    try:
+        urlopen(address).read()
+    except Exception:
+        pass
+
+class ThreadingWSGIServer(ThreadingMixIn, WSGIServer): 
+    pass
 
 class PathDispatcher:
     def __init__(self):
@@ -51,7 +62,8 @@ class PathCapsule(threading.Thread):
         self.dispatcher = dispatcher
         self.port = port
         self.title = title
-        self.httpd = make_server('', port, dispatcher)
+        #self.httpd = make_server('', port, dispatcher)
+        self.httpd = make_server('', port, dispatcher, ThreadingWSGIServer)
     
     def run(self):
         self.httpd.serve_forever()
@@ -69,12 +81,12 @@ if __name__ == '__main__':
     ret_dispatcher.register('GET', '/reservations', resroute)
     ret_dispatcher.register('GET', '/reminders', remroute)
     ret_dispatcher.register('GET', '/cats', catroute)
-    ret_capsule = PathCapsule(ret_dispatcher, 8080, 'Get Capsule')
+    ret_capsule = PathCapsule(ret_dispatcher, 8080, 'Fetch Capsule')
 
     # Upds
     upd_dispatcher = PathDispatcher()
     upd_dispatcher.register('GET', '/upres', updateReservation)
-    upd_capsule = PathCapsule(upd_dispatcher, 9090, 'Post Capsule')
+    upd_capsule = PathCapsule(upd_dispatcher, 9090, 'Update Capsule')
 
     upd_capsule.start()
     ret_capsule.start()
@@ -84,10 +96,12 @@ if __name__ == '__main__':
             sleep(1)
     except KeyboardInterrupt:
         print("Killing Retriever")
+        nullrequest("http://localhost:8080")
         ret_capsule.kill()
         ret_capsule.join()
 
         print("Killing Updater")
+        nullrequest("http://localhost:9090")
         upd_capsule.kill()
         upd_capsule.join()
 

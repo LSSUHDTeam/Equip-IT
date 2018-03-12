@@ -146,6 +146,12 @@
          <height>0</height>
         </size>
        </property>
+       <property name="font">
+        <font>
+         <family>Terminal</family>
+         <pointsize>20</pointsize>
+        </font>
+       </property>
       </widget>
      </item>
     </layout>
