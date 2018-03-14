@@ -185,16 +185,165 @@ if __name__ == '__main__':
         ]
     }))
 
+    print("Adding item: ", addItem({
+        "barcode": "A45-RRET-X251",
+        "name": "Laptop 1",
+        "desc": "A test item named laptop",
+        "periphs": [
+            {
+                "name": "DELL Case",
+                "desc": "A case for the computer",
+                "count": 1,
+                "numberpresent": 1
+            },
+            {
+                "name": "Mouse",
+                "desc": "A rmouse for the computer",
+                "count": 1,
+                "numberpresent": 1
+            },
+            {
+                "name": "Power Cord",
+                "desc": "Power plug-in",
+                "count": 1,
+                "numberpresent": 1
+            },
+            {
+                "name": "HDMI Cable",
+                "desc": "A Cable for the computer",
+                "count": 1,
+                "numberpresent": 1
+            }
+        ]
+    }))
+    
+    print("Adding item: ", addItem({
+        "barcode": "A45-RRET-X252",
+        "name": "Laptop 2",
+        "desc": "A test item named laptop",
+        "periphs": [
+            {
+                "name": "DELL Case",
+                "desc": "A case for the computer",
+                "count": 1,
+                "numberpresent": 1
+            },
+            {
+                "name": "Mouse",
+                "desc": "A rmouse for the computer",
+                "count": 1,
+                "numberpresent": 1
+            },
+            {
+                "name": "Power Cord",
+                "desc": "Power plug-in",
+                "count": 1,
+                "numberpresent": 1
+            },
+            {
+                "name": "HDMI Cable",
+                "desc": "A Cable for the computer",
+                "count": 1,
+                "numberpresent": 1
+            }
+        ]
+    }))
+
+    print("Adding item: ", addItem({
+        "barcode": "A45-RRET-X253",
+        "name": "Laptop 3",
+        "desc": "A test item named laptop",
+        "periphs": [
+            {
+                "name": "DELL Case",
+                "desc": "A case for the computer",
+                "count": 1,
+                "numberpresent": 1
+            },
+            {
+                "name": "Mouse",
+                "desc": "A rmouse for the computer",
+                "count": 1,
+                "numberpresent": 1
+            },
+            {
+                "name": "Power Cord",
+                "desc": "Power plug-in",
+                "count": 1,
+                "numberpresent": 1
+            },
+            {
+                "name": "HDMI Cable",
+                "desc": "A Cable for the computer",
+                "count": 1,
+                "numberpresent": 1
+            }
+        ]
+    }))
+
+    print("Adding item: ", addItem({
+        "barcode": "955-x837-3555",
+        "name": "Projector Screen",
+        "desc": "A test item named screen",
+        "periphs": [
+            {
+                "name": "Stand",
+                "desc": "A stand for the screen.",
+                "count": 1,
+                "numberpresent": 1
+            }
+        ]
+    }))
+
+# REQUIRED CAT
+    print("Adding cat: ", addCategory({
+        "id": "GIVEN BY CAT ADDER",
+        "label": "NONE",
+        "parent": "NONE",
+        "itembarcodes": [
+        ]
+    }))
+# REQUIRED CAT <END>
+
+    print("Adding cat: ", addCategory({
+        "id": "GIVEN BY CAT ADDER",
+        "label": "Projector Equip",
+        "parent": "NONE",
+        "itembarcodes": [
+        ]
+    }))
+
     print("Adding cat: ", addCategory({
         "id": "GIVEN BY CAT ADDER",
         "label": "Projectors",
-        "parent": "NONE",
+        "parent": "Projector Equip",
         "itembarcodes": [
             "929-x837-3284",
             "938-x837-3284"
         ]
     }))
 
+    
+    print("Adding cat: ", addCategory({
+        "id": "GIVEN BY CAT ADDER",
+        "label": "Screens",
+        "parent": "Projector Equip",
+        "itembarcodes": [
+            "955-x837-3555"
+        ]
+    }))
+
+    print("Adding cat: ", addCategory({
+        "id": "GIVEN BY CAT ADDER",
+        "label": "Loaners",
+        "parent": "NONE",
+        "itembarcodes": [
+            "A45-RRET-X251",
+            "A45-RRET-X252",
+            "A45-RRET-X253"
+        ]
+    }))
+    
     # print("Adding reservation: ", addReservation({
     #     "id": "GIVEN TO BY ADDRES",
     #     "ti": generateDayStamp(),

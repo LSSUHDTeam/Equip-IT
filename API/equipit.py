@@ -29,6 +29,8 @@ def generateTimeSimestamp():
 def generateDayStamp():
     return datetime.now().strftime("%d/%m/%Y")
 
+def generateUpdateResponse(title, message):
+    return '[{"title": "%s", "message": "%s"}]' % (title, message)
 
 '''
 
@@ -369,7 +371,8 @@ def addReservation(res_dict):
     # Add the teservation to the time-indexed db
     dbti.ladd(res_dict["ti"], res_dict)
 
-    # Schedule the device to be out for the time
+    # Schedule the device to be out for the time - we assume that if the 
+    # user could select the item, it exists in the db
     for item in res_dict["itemBarcodes"]:
         addToSchedule(item, res_dict["id"], res_dict["start"], res_dict["end"])
 
@@ -380,12 +383,10 @@ def editReservation(res_dict):
 
 ''' Add or update a reservation '''
 def handleReservationAddOrUpdate(resdata):
-
     try:
         resdata = json.loads(resdata)
     except:
         return generateError("JSON Error", "Json unable to loads reservation data.")
-
     result = None
     try:
         if resdata["id"] == "NEW":
@@ -393,9 +394,7 @@ def handleReservationAddOrUpdate(resdata):
         else:
             result = editReservation(resdata)
     except KeyError as e:
-        print("\n\n", resdata, "\n\n", e, "\n\n")
         return generateError("Key Error", "Key error present in reservation dict.")
-
     if result is None:
         return generateError("DICT Error", "Malformed reservation dictionary.")
     elif result == -2:
@@ -403,10 +402,9 @@ def handleReservationAddOrUpdate(resdata):
     elif result == -100:
         return generateError("Construction Error", "Method under construction")
     elif result == 0:
-        return "Reservation action completed."
+        return generateUpdateResponse("Complete", "Reservation action completed.")  
     else:
         return generateError("Route Error", "Unhandled /upres case.")
-
 
 ''' Handles /upres calls '''
 def updateReservation(environ, start_response):
@@ -423,6 +421,73 @@ def updateReservation(environ, start_response):
             resp = generateError("Invalid Reservation Data", "No data dictionary detected.")
         else:
             resp = handleReservationAddOrUpdate(datadict)
+    try:
+        resp = resp.encode('utf-8')
+    except AttributeError:
+        resp = generateError("Internal Error", "Tried to encode a non-encodable object.")
+    yield resp
+
+''' Add/edit item details '''
+def handleItemData(item_dict):
+    try:
+        item_dict = json.loads(item_dict)
+    except:
+        return generateError("JSON Error", "Json unable to loads item data.")
+    expected = ["barcode", "name", "desc", "periphs"]
+    periphreq = ["name", "desc", "count", "numberpresent"]
+    for x in expected:
+        if x not in item_dict.keys():
+            return generateError("Item Error", "Item missing required dictionary elements.")
+    if not isinstance(item_dict["periphs"],list):
+        return generateError("Periph Error", "Item value of non-list type.")
+    for x in item_dict["periphs"]:
+        if not isinstance(x, dict):
+            return generateError("Periph Error", "Peripheral entry of non-dict type.")
+        for y in periphreq:
+            if y not in x.keys():
+                return generateError("Periph Error", "Peripheral entry missing required dictionary elements.")
+    updating = False
+    db = gherkindb.load("databases/items.db", True)
+    check = db.get(item_dict["barcode"])
+    if check is not None:
+        updating = True
+    if updating:
+        result = "Item updated; "
+    else:
+        result = "Item created; "
+
+    # Add the item - Full add, even if update
+    db.set(item_dict["barcode"], item_dict)
+    schedule_requires_creating = not updating
+
+    # Create a schedule list for the item if it doesn't exist
+    dbs = gherkindb.load("databases/schedules.db", True)
+    if dbs.get(item_dict["barcode"]) is None:
+        dbs.lcreate(item_dict["barcode"])
+        if schedule_requires_creating:
+            result = result + "Schedule created."
+        else:
+            result = result + "Existing item had no schedule. Created."
+
+    # We don't update the schedule here.
+    return generateUpdateResponse("Item Update Complete", result)
+
+
+''' Handles /upitem calls '''
+def updateItem(environ, start_response):
+    start_response('200 OK', [('Content-type', 'text/plain')])
+    params = environ['params']
+    token = params.get('token')
+    datadict = params.get('data')
+    if token is None:
+        resp = generateError("Unauthorized", "No token supplied")
+    elif authRequest(token) is False:
+        resp = generateError("Unauthorized", "Incorrect token")
+    else:
+        if datadict is None:
+            resp = generateError("Invalid Item Data", "No data dictionary detected.")
+        else:
+            resp = handleItemData(datadict)
     try:
         resp = resp.encode('utf-8')
     except AttributeError:

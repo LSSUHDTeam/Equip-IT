@@ -86,6 +86,7 @@ if __name__ == '__main__':
     # Upds
     upd_dispatcher = PathDispatcher()
     upd_dispatcher.register('GET', '/upres', updateReservation)
+    upd_dispatcher.register('GET', '/upitem', updateItem)
     upd_capsule = PathCapsule(upd_dispatcher, 9090, 'Update Capsule')
 
     upd_capsule.start()
