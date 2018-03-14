@@ -54,9 +54,9 @@ void BaseWindow::accessChildWindow(WindowDescriptors window)
     case WindowDescriptors::CheckoutRoot:
     {
         localContext->changeUserLocation(WindowDescriptors::CheckoutRoot);
-
         CheckOut *checkout = new CheckOut(localContext, CheckoutType::QuickCheckout, this);
-        connect(checkout, SIGNAL(checkoutClosed(WindowDescriptors)), this, SLOT(childWindowClosed(WindowDescriptors)));
+        connect(checkout, SIGNAL(checkoutClosed(WindowDescriptors)),
+                this, SLOT(childWindowClosed(WindowDescriptors)));
         connect(this, SIGNAL(forceCloseChildren()), checkout, SLOT(forceClose()));
         checkout->setAttribute(Qt::WA_DeleteOnClose, true);
         checkout->show();
@@ -69,6 +69,12 @@ void BaseWindow::accessChildWindow(WindowDescriptors window)
     case WindowDescriptors::ReservationRoot:
     {
         localContext->changeUserLocation(WindowDescriptors::ReservationRoot);
+        ReservationRoot *resroot = new ReservationRoot(localContext, this);
+        connect(resroot, SIGNAL(reservationRootClosed(WindowDescriptors)),
+                this, SLOT(childWindowClosed(WindowDescriptors)));
+        connect(this, SIGNAL(forceCloseChildren()), resroot, SLOT(forceClose()));
+        resroot->setAttribute(Qt::WA_DeleteOnClose, true);
+        resroot->showMaximized();
         break;
     }
 
@@ -98,7 +104,8 @@ void BaseWindow::accessChildWindow(WindowDescriptors window)
         localContext->changeUserLocation(WindowDescriptors::AdminPanel);
 
         AdminPanel *admin = new AdminPanel(localContext,this);
-        connect(admin, SIGNAL(adminPanelClosed(WindowDescriptors)), this, SLOT(childWindowClosed(WindowDescriptors)));
+        connect(admin, SIGNAL(adminPanelClosed(WindowDescriptors)),
+                this, SLOT(childWindowClosed(WindowDescriptors)));
         connect(this, SIGNAL(forceCloseChildren()), admin, SLOT(requestForceClose()));
         admin->setAttribute(Qt::WA_DeleteOnClose, true);
         admin->show();

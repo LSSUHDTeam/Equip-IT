@@ -10,6 +10,7 @@
 #include <QStandardPaths>
 #include <QCryptographicHash>
 #include "framework/contextmanger.h"
+#include "windows/reservationroot.h"
 #include "windows/adminpanel.h"
 #include "windows/checkout.h"
 

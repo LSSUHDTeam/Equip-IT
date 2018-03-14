@@ -36,6 +36,7 @@ private slots:
     void on_okayButton_clicked();
 
 private:
+    bool forced;
     Ui::SimpleMessageBox *ui;
     void closeEvent(QCloseEvent *);
 };

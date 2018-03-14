@@ -10,6 +10,9 @@ CheckOut::CheckOut(ContextManager *context, CheckoutType mode, QWidget *parent) 
     this->showMaximized();
     timeSet = false; itemsSet = false;
     forSet = false; bySet = false, allowView = false;
+    descSet = false;
+
+    ui->testLoadingButton->setVisible(DISPLAY_TESTING_FEATURES);
 
     // Operation dependencies
     localContext = context;
@@ -43,6 +46,8 @@ CheckOut::CheckOut(ContextManager *context, CheckoutType mode, QWidget *parent) 
     connect(ui->forEdit, SIGNAL(focusLoss()), this, SLOT(forFocusLost()));
     connect(ui->emailEdit, SIGNAL(focusGained()), this, SLOT(emailFocusGained()));
     connect(ui->emailEdit, SIGNAL(focusLoss()), this, SLOT(emailFocusLost()));
+    connect(ui->descEdit, SIGNAL(focusGained()), this, SLOT(descFocusGained()));
+    connect(ui->descEdit, SIGNAL(focusLoss()), this, SLOT(descFocusLost()));
 
     /*
         Setup on-screen keyboard window
@@ -63,6 +68,7 @@ CheckOut::CheckOut(ContextManager *context, CheckoutType mode, QWidget *parent) 
 
     ui->forEdit->setStyleSheet("QLineEdit { background: rgb(102, 153, 153); selection-background-color: rgb(102, 204, 255); }");
     ui->emailEdit->setStyleSheet("QLineEdit { background: rgb(102, 153, 153); selection-background-color: rgb(102, 204, 255); }");
+    ui->descEdit->setStyleSheet("QLineEdit { background: rgb(102, 153, 153); selection-background-color: rgb(102, 204, 255); }");
 }
 
 /*
@@ -111,22 +117,33 @@ void CheckOut::ephimeralNetworkErrorMarkedIgnore()
 void CheckOut::forFocusGained()
 {
     ui->emailEdit->setStyleSheet("QLineEdit { background: rgb(102, 153, 153); selection-background-color: rgb(102, 204, 255); }");
+    ui->descEdit->setStyleSheet("QLineEdit { background: rgb(102, 153, 153); selection-background-color: rgb(102, 204, 255); }");
     ui->forEdit->setStyleSheet("QLineEdit { background: rgb(255, 255, 255); selection-background-color: rgb(102, 204, 255); }");
     localContext->addUserCrumb("Editing checkout 'for'");
     keyDirector = KeyboardFlow::who;
 }
 
-
 void CheckOut::emailFocusGained()
 {
     ui->forEdit->setStyleSheet("QLineEdit { background: rgb(102, 153, 153); selection-background-color: rgb(102, 204, 255); }");
+    ui->descEdit->setStyleSheet("QLineEdit { background: rgb(102, 153, 153); selection-background-color: rgb(102, 204, 255); }");
     ui->emailEdit->setStyleSheet("QLineEdit { background: rgb(255, 255, 255); selection-background-color: rgb(102, 204, 255); }");
     localContext->addUserCrumb("Editing Email");
     keyDirector = KeyboardFlow::email;
 }
 
+void CheckOut::descFocusGained()
+{
+    ui->forEdit->setStyleSheet("QLineEdit { background: rgb(102, 153, 153); selection-background-color: rgb(102, 204, 255); }");
+    ui->emailEdit->setStyleSheet("QLineEdit { background: rgb(102, 153, 153); selection-background-color: rgb(102, 204, 255); }");
+    ui->descEdit->setStyleSheet("QLineEdit { background: rgb(255, 255, 255); selection-background-color: rgb(102, 204, 255); }");
+    localContext->addUserCrumb("Editing Email");
+    keyDirector = KeyboardFlow::desc;
+}
+
 void CheckOut::forFocusLost(){}
 void CheckOut::emailFocusLost(){}
+void CheckOut::descFocusLost(){}
 
 /*
 
@@ -139,7 +156,7 @@ void CheckOut::bringUpKeyboard(){}
 
 void CheckOut::checkForViewEnable()
 {
-    if(forSet && bySet && itemsSet && timeSet)
+    if(forSet && bySet && itemsSet && timeSet && descSet)
     {
         allowView = true;
         ui->completeReservationButton->setEnabled(true);
@@ -182,6 +199,19 @@ void CheckOut::keyboardDataReceived(QString data)
         checkForViewEnable();
         ephimeralReservation->setReservationEmail(ui->emailEdit->text());
         break;
+    case KeyboardFlow::desc:
+        if (data == QString(SCREENBOARD_BACKSPACE))
+        {
+            QString fedit = ui->descEdit->text();
+            fedit = fedit.left(fedit.length()-1);
+            ui->descEdit->setText(fedit);
+        }
+        else
+            ui->descEdit->insert(data);
+        descSet = true;
+        checkForViewEnable();
+        ephimeralReservation->setReservationDescription(ui->descEdit->text());
+        break;
     case KeyboardFlow::ignore:
         qDebug() << "Keyboard data " << data << " present while ignoring.\n";
         break;
@@ -214,13 +244,29 @@ void CheckOut::on_addItemButton_clicked()
 {
     switch(checkoutMode){
     case CheckoutType::BuilderCheckout:
+    {
+        if(!timeSet)
+        {
+            ui->errorLabel->setText("Time range must be set first");
+            return;
+        }
+
         localContext->addUserCrumb("Checkout 'builder' mode");
+        CatItems *cats = new CatItems(localContext, ephimeralReservation,this);
+        connect(this, SIGNAL(closeChildren()), cats, SLOT(forceClose()));
+        connect(cats, SIGNAL(dataReady(QStringList)),
+                this, SLOT(addItemsToReservation(QStringList)));
+        cats->setAttribute(Qt::WA_DeleteOnClose, true);
+        cats->showMaximized();
         break;
+    }
     case CheckoutType::QuickCheckout:
     {
+        localContext->addUserCrumb("Checkout 'quick' mode");
         QuickScanItem *quickScan = new QuickScanItem(localContext, this);
         connect(this, SIGNAL(closeChildren()), quickScan, SLOT(forceClose()));
-        connect(quickScan, SIGNAL(dataReady(QStringList)), this, SLOT(addItemsToReservation(QStringList)));
+        connect(quickScan, SIGNAL(dataReady(QStringList)),
+                this, SLOT(addItemsToReservation(QStringList)));
         quickScan->setAttribute(Qt::WA_DeleteOnClose, true);
         quickScan->show();
         break;
@@ -256,6 +302,7 @@ void CheckOut::setTimeFrame(QDateTime start, QDateTime end)
                      ));
      ephimeralReservation->setReservationTimeRange(start, end);
      timeSet = true;
+
      checkForViewEnable();
 }
 /*
@@ -270,6 +317,17 @@ void CheckOut::setBuildingAndRoom(QString building, QString room)
         ui->diplayLabelWhere->setText(building.mid(0,6) + "... , " + room);
     else
         ui->diplayLabelWhere->setText(building + ", " + room);
+}
+
+void CheckOut::pullTimeCache()
+{
+    if(checkoutMode == CheckoutType::BuilderCheckout)
+    {
+        ui->errorLabel->setText("Building schedule cache..");
+        // Trigger the first cache of item schedule for current time range.
+        ephimeralReservation->getTimeSpecifiedItems();
+        ui->errorLabel->setText("");
+    }
 }
 
 void CheckOut::reservationCompletedAndAcknowledged()
@@ -309,7 +367,7 @@ void CheckOut::showSubmitSuccess()
     connect(this, SIGNAL(closeChildren()), smb, SLOT(forceClose()));
     connect(smb, SIGNAL(messageBoxClosed()), this, SLOT(reservationCompletedAndAcknowledged()));
     smb->setAttribute(Qt::WA_DeleteOnClose, true);
-    smb->show();
+    smb->showMaximized();
 }
 
 /*
@@ -339,6 +397,11 @@ void CheckOut::on_timeButton_clicked()
     {
         localContext->addUserCrumb("Checkout 'builder' mode");
         TimeGetter *timeget = new TimeGetter(this);
+        connect(this, SIGNAL(closeChildren()), timeget, SLOT(forceClose()));
+        connect(timeget, SIGNAL(setDateTimeRange(QDateTime, QDateTime)),
+                this, SLOT(setTimeFrame(QDateTime, QDateTime)));
+        connect(timeget, SIGNAL(actionsCompleted()),
+                this, SLOT(pullTimeCache()));
         timeget->setAttribute(Qt::WA_DeleteOnClose, true);
         timeget->showMaximized();
         break;
@@ -402,11 +465,11 @@ void CheckOut::on_testLoadingButton_clicked()
 {
     QDateTime start = QDateTime::currentDateTime();
     QDateTime end = start.addDays(1);
-
     ephimeralReservation->addItemToReservation("938-x837-3284");
     ephimeralReservation->addItemToReservation("929-x837-3284");
     ephimeralReservation->setReservationTimeRange(start, end);
     ephimeralReservation->setReservationFor("Josh Tester");
     ephimeralReservation->setReservationEmail("jbosley2@lssu.edu");
+    ephimeralReservation->setReservationDescription("Simple test res");
     ui->completeReservationButton->setEnabled(true);
 }

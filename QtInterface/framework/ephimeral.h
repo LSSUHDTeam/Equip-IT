@@ -42,6 +42,7 @@ public:
     void setReservationLocation(QString building, QString room);
     void setReservationFor(QString);
     void setReservationEmail(QString);
+    void setReservationDescription(QString);
     void updateReservationStartTime(QDateTime newStart);
     void updateReservationEndTime(QDateTime newEnd);
 
@@ -53,13 +54,19 @@ public:
     std::vector<scheduleConflict> getReservationConflicts();
     int numberOfConflicts();
     QString getItemNameFromBarcode(QString barcode);
+    QDateTime getStart();
+    QDateTime getEnd();
 
+
+    /*
+        Info getters
+    */
+    timespecificItems getTimeSpecifiedItems();
 
     /*
         Check for errors and finialize
     */
     void finalizeReservation();
-
 
     /*
         Server pushes - after the emittion of
@@ -91,6 +98,7 @@ public slots:
 private:
     ContextManager *localContext;
     EphimeralStage currentStage;
+    timespecificItems timeScheduleCache;
 
     /*
         General helpers for class
@@ -118,7 +126,6 @@ private:
     */
     std::vector<scheduleConflict> existingConflicts;
     void analyzeSchedule();
-
 
     /*
         Network call

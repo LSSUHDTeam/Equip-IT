@@ -50,6 +50,11 @@ reservableItems ContextManager::getItemByBarcode(QString barcode)
     return dam.getItemByBarcode(barcode);
 }
 
+std::vector<itemCategories> ContextManager::getExistingCats()
+{
+    return dam.getAllCats();
+}
+
 
 DAMError ContextManager::updateItemPeriphs(QString barcode, std::vector<peripherals> newPeriphs)
 {

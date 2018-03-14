@@ -15,13 +15,15 @@
 #include "windows/screenboard.h"
 #include "windows/quickscanitem.h"
 #include "windows/buildingselection.h"
+#include "windows/catitems.h"
 #include "objects/etouchlineedit.h"
 
 
 enum class KeyboardFlow{
     ignore,
     who,
-    email
+    email,
+    desc
 };
 
 enum class CheckoutType{
@@ -75,6 +77,8 @@ public slots:
     void forFocusLost();
     void emailFocusGained();
     void emailFocusLost();
+    void descFocusGained();
+    void descFocusLost();
 
     // Data window return slots
     void addItemsToReservation(QStringList barcodes);
@@ -82,6 +86,7 @@ public slots:
     // Time frame returned
     void setTimeFrame(QDateTime start, QDateTime end);
     void setBuildingAndRoom(QString building, QString room);
+    void pullTimeCache();
 
     // Finalization Slots
     void reservationCompletedAndAcknowledged();
@@ -122,7 +127,7 @@ private:
     ContextManager *localContext;
     KeyboardFlow keyDirector;
 
-    bool timeSet, itemsSet, forSet, bySet, allowView;
+    bool timeSet, itemsSet, forSet, bySet, descSet, allowView;
 
     Ephimeral *ephimeralReservation;
 

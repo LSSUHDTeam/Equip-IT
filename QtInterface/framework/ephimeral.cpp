@@ -34,6 +34,7 @@ Ephimeral::~Ephimeral()
 */
 void Ephimeral::setReservationTimeRange(QDateTime start, QDateTime end)
 {
+    timeScheduleCache.clear();
     currentReservation.start = dateTimeToString(start);
     currentReservation.end = dateTimeToString(end);
 
@@ -76,6 +77,11 @@ void Ephimeral::setReservationFor(QString name)
 void Ephimeral::setReservationEmail(QString email)
 {
     currentReservation.email = email;
+}
+
+void Ephimeral::setReservationDescription(QString desc)
+{
+    currentReservation.title = desc;
 }
 
 void Ephimeral::updateReservationStartTime(QDateTime newStart)
@@ -129,6 +135,78 @@ QString Ephimeral::getItemNameFromBarcode(QString barcode)
         }
     }
     return "Barcode not located\nTry updating.";
+}
+
+QDateTime Ephimeral::getStart()
+{
+    return stringToDateTime(currentReservation.start);
+}
+
+QDateTime Ephimeral::getEnd()
+{
+    return stringToDateTime(currentReservation.end);
+}
+
+timespecificItems Ephimeral::getTimeSpecifiedItems()
+{
+    if(timeScheduleCache.inited)
+    {
+        qDebug() << "Using cached schedule";
+        return timeScheduleCache;
+    }
+    qDebug() << "Generating new time schedule cache";
+
+    // Generate network calls to get ALL item's schedules
+    std::vector<DAMOrigin> preparedCalls;
+    std::vector<reservableItems> allItems = localContext->getExistingItems();
+    for(auto i = allItems.begin(); i != allItems.end(); ++i)
+    {
+        DAMOrigin call(
+                    WindowDescriptors::_non_window_ephimeral,
+                    QUrl( QString(WEB_SERVER_FETCH_ADDRESS)
+                          + "/schedules?classifier=single&id=" + (*i).barcode +
+                         "&token=" + QString(WEB_SERVER_APITOKEN))
+                    );
+        call.isGet = true;
+        call.allowReplay = false;
+        call.isFullUpdate = false;
+        call.format = respDataTypes::schedules;
+        preparedCalls.push_back(call);
+    }
+
+    // Make the calls
+    executePreparedCalls(preparedCalls);
+
+    // Check for network errors
+    if(errorReports.size() > 0)
+    {
+        throwNetworkErrors(NetworkCallerConfig(NetworkCallerOrigin::secondary, DAMStatus(errorReports,alienPackages),true));
+        return timespecificItems();
+    }
+
+    // Check for conflicting things
+    std::vector<reservableItems> conflictingItems, nonconflictingItems;
+    std::vector<schedule> conflictingSchedules, nonConflictingSchules;
+    for(auto i = alienPackages.begin(); i != alienPackages.end(); ++i)
+    {
+        for(auto j = (*i).sched.begin(); j != (*i).sched.end(); ++j)
+        {
+            scheduleConflict temp = (*j).checkForConflict(currentReservation.start, currentReservation.end);
+            if(temp.exists)
+            {
+                conflictingItems.push_back(localContext->getItemByBarcode(temp.itembarcode));
+                conflictingSchedules.push_back((*i).sched);
+            } else {
+                nonconflictingItems.push_back(localContext->getItemByBarcode(temp.itembarcode));
+                nonConflictingSchules.push_back((*i).sched);
+            }
+        }
+    }
+    timeScheduleCache = timespecificItems(
+                nonconflictingItems, conflictingItems
+                );
+
+    return timeScheduleCache;
 }
 
 void Ephimeral::finalizeReservation()
@@ -213,7 +291,7 @@ void Ephimeral::submitCompletedReservation()
     call.isGet = true;
     call.allowReplay = false;
     call.isFullUpdate = false;
-    call.format = respDataTypes::reservations;
+    call.format = respDataTypes::updatedItem;
     preparedCalls.push_back(call);
 
 
@@ -226,15 +304,12 @@ void Ephimeral::submitCompletedReservation()
 
         if(currentItem.barcode != "error")
         {
-            qDebug().noquote() << "ITEM: " <<
-                        currentItem.exportJson();
-
             /*
 
                     UPITEM NOT YET CREATED ON SERVR
 
             */
-/*
+
             QUrl outUrl = QUrl(QString(WEB_SERVER_UPDATE_ADDRESS) +
                           "/upitem?token=" + QString(WEB_SERVER_APITOKEN) +
                                "&data=" + currentItem.exportJson());
@@ -243,9 +318,8 @@ void Ephimeral::submitCompletedReservation()
             call.isGet = true;
             call.allowReplay = false;
             call.isFullUpdate = false;
-            call.format = respDataTypes::items;
+            call.format = respDataTypes::updatedItem;
             preparedCalls.push_back(call);
-*/
         }
     }
 

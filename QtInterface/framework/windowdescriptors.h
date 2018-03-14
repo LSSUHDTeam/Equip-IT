@@ -8,8 +8,7 @@ enum class WindowDescriptors{
     LoginWindow,
     BaseWindow,
     ReservationRoot,
-    ReservationAdd,
-    ReservationRemove,
+    ReservationEdit,
     CheckoutRoot,
     CheckInRoot,
     OverviewRoot,
@@ -33,10 +32,8 @@ public:
             return "BaseWindow";
         case WindowDescriptors::ReservationRoot:
             return "ReservationRoot";
-        case WindowDescriptors::ReservationAdd:
-            return "ReservationAdd";
-        case WindowDescriptors::ReservationRemove:
-            return "ReservationRemove";
+        case WindowDescriptors::ReservationEdit:
+            return "ReservationEdit";
         case WindowDescriptors::CheckoutRoot:
             return "CheckoutRoot";
         case WindowDescriptors::CheckInRoot:

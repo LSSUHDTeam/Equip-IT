@@ -337,6 +337,10 @@ void DataAccessManager::alienResponse(QNetworkReply *reply)
         qDebug() << "DAM:AlienResponse:Schedule";
         returnPackage.sched = jsonToSchedData(qreply);
         break;
+    case respDataTypes::updatedItem:
+        qDebug() << "DAM:AlienResponse:UpdatedItem";
+        returnPackage.update = jsonToUpData(qreply);
+        break;
     default:
         qDebug() << "Unhandled data type for alien!";
         break;
@@ -491,6 +495,22 @@ std::vector<itemCategories> DataAccessManager::jsonToCatData(QString data)
     return parsed;
 }
 
+std::vector<DAMValidUpdate> DataAccessManager::jsonToUpData(QString data)
+{
+    std::vector<DAMValidUpdate> parsed;
+    QJsonDocument jsond = QJsonDocument::fromJson(data.toUtf8());
+    QJsonArray jsona = jsond.array();
+    foreach (const QJsonValue &v, jsona)
+    {
+        DAMValidUpdate vu;
+        QJsonObject dat = v.toObject();
+        vu.message = dat["message"].toString();
+        vu.title = dat["title"].toString();
+        parsed.push_back(vu);
+    }
+    return parsed;
+}
+
 std::vector<schedule> DataAccessManager::jsonToSchedData(QString data)
 {
 
@@ -543,6 +563,11 @@ reservableItems DataAccessManager::getItemByBarcode(QString barcode)
     err.name = "Barcode not found";
     err.barcode = "error";
     return err;
+}
+
+std::vector<itemCategories> DataAccessManager::getAllCats()
+{
+    return existingCats;
 }
 
 /*

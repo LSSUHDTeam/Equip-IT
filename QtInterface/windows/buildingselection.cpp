@@ -196,11 +196,16 @@ void BuildingSelection::writeBuildings()
     foreach (const QString &name, buildstruct.names)
     {
         output.append("\n\t{\"name\": \""+name+"\",\n\t\"rooms\": [");
-        foreach(const QString &room, buildstruct.nameToRoomsMap[name])
+
+        if(buildstruct.nameToRoomsMap[name].length()>0)
         {
-            output.append("\n\t\t\"" + room + "\",");
+
+            foreach(const QString &room, buildstruct.nameToRoomsMap[name])
+            {
+                output.append("\n\t\t\"" + room + "\",");
+            }
+            output = output.left(output.length()-1);
         }
-        output = output.left(output.length()-1);
         output.append("\n\t]},");
     }
     output = output.left(output.length()-1);

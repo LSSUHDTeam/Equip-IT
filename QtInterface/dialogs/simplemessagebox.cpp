@@ -5,6 +5,7 @@ SimpleMessageBox::SimpleMessageBox(smbdata messageData, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SimpleMessageBox)
 {
+    forced = false;
     ui->setupUi(this);
     ui->fromLabel->setText(messageData.from);
     ui->titleLabel->setText(messageData.title);
@@ -21,6 +22,7 @@ SimpleMessageBox::~SimpleMessageBox()
 
 void SimpleMessageBox::forceClose()
 {
+    forced = true;
     this->close();
 }
 
@@ -31,6 +33,7 @@ void SimpleMessageBox::on_okayButton_clicked()
 
 void SimpleMessageBox::closeEvent(QCloseEvent *event)
 {
-    emit messageBoxClosed();
+    if(!forced)
+        emit messageBoxClosed();
     event->accept();
 }

@@ -8,6 +8,7 @@
 #include <QStringList>
 #include <QMap>
 
+#define DISPLAY_TESTING_FEATURES false
 #define MINUTES_BEFORE_RES_ALERT 10
 #define MINUTES_TIME_BUFFER 30
 #define DATETIME_FORMAT "dd/MM/yyyy h:mm AP"
@@ -50,6 +51,12 @@ struct reservableItems {
         barcode = other.barcode; name = other.name; desc = other.desc;
         periphs = other.periphs;
         return *this;
+    }
+
+
+    bool operator==(const QString &other)
+    {
+        return (name == other || barcode == other);
     }
 
     QString compilePeriphs()
@@ -190,7 +197,11 @@ struct schedule{
                                         (*i), ScheduleConflictTypes::endTimeOverlap);
             }
         }
-        return scheduleConflict();
+
+        scheduleConflict availableItem;
+        availableItem.itembarcode = scheduleid;
+        availableItem.exists = false;
+        return availableItem;
     }
 };
 
@@ -223,8 +234,8 @@ struct reservations {
                 " \"start\": \""+ start + "\", " +
                 " \"end\": \""+ end + "\", " +
                 " \"status\": \""+ status + "\", " +
-                " \"retby\": \""+ retby + " \", " +
-                " \"email\": \""+ email + " \", " +
+                " \"retby\": \""+ retby + "\", " +
+                " \"email\": \""+ email + "\", " +
                 " \"itemBarcodes\":["+ compileItemBarcodes() + "]}";
     }
 };
@@ -288,5 +299,44 @@ struct repetition {
     }
 };
 
+struct timespecificItems{
+    // Item name -> definition
+    QMap<QString, reservableItems> availableItems;
+    QMap<QString, reservableItems> unAvailableItems;
+    QMap<QString, reservableItems> schedAvail;
+    QMap<QString, reservableItems> schedUnavail;
+    bool inited;
+
+    timespecificItems(){
+        inited = false;
+    }
+    timespecificItems(std::vector<reservableItems> available, std::vector<reservableItems> unavailable,
+                      std::vector<schedule> availScheds, std::vector<schedule> unavailScheds)
+    {
+        for(auto i = available.begin(); i != available.end(); ++i)
+            availableItems.insert((*i).name, (*i));
+        for(auto i = unavailable.begin(); i != unavailable.end(); ++i)
+            unAvailableItems.insert((*i).name, (*i));
+        for(auto i = availScheds.begin(); i != availScheds.end(); ++i)
+            schedAvail.insert((*i).scheduleid, (*i));
+        for(auto i = unavailScheds.begin(); i != unavailScheds.end(); ++i)
+            schedUnavail.insert((*i).scheduleid, (*i));
+        inited = true;
+    }
+    timespecificItems& operator=(const timespecificItems &other)
+    {
+        availableItems = other.availableItems;
+        unAvailableItems = other.unAvailableItems;
+        schedAvail = other.schedAvail; schedUnavail = other.schedUnavail;
+        inited = true;
+        return *this;
+    }
+    void clear()
+    {
+        availableItems.clear();
+        unAvailableItems.clear();
+        inited = false;
+    }
+};
 
 #endif // STRUCTURES_H

@@ -32,7 +32,8 @@ enum class respDataTypes{
     items,
     schedules,
     reservations,
-    reminders
+    reminders,
+    updatedItem
 };
 
 struct DAMOrigin {
@@ -104,11 +105,16 @@ struct DAMError {
     }
 };
 
+struct DAMValidUpdate {
+    QString title, message;
+};
+
 struct DAMAlienPackage {
     std::vector<reservableItems> items;
     std::vector<reservations> res;
     std::vector<reservedReminders> rem;
     std::vector<schedule> sched;
+    std::vector<DAMValidUpdate> update;
 };
 
 struct DAMStatus {
@@ -187,6 +193,7 @@ public:
     */
     std::vector<reservableItems> getAllItems();
     reservableItems getItemByBarcode(QString barcode);
+    std::vector<itemCategories> getAllCats();
 
     /*
 
@@ -264,8 +271,8 @@ private:
     std::vector<reservations> jsonToResData(QString data);
     std::vector<reservedReminders> jsonToRemData(QString data);
     std::vector<itemCategories> jsonToCatData(QString data);
-
     std::vector<schedule> jsonToSchedData(QString data);
+    std::vector<DAMValidUpdate> jsonToUpData(QString data);
 };
 
 #endif // DATAACCESSMANAGER_H
