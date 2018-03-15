@@ -196,9 +196,7 @@ public:
     std::vector<itemCategories> getAllCats();
 
     /*
-
         Data Updating
-
     */
 
     // Update Item Peripherals
@@ -206,8 +204,9 @@ public:
 
 
     /*
-        Get Item's schedule
+        Setters - Cached from Ephimeral
     */
+    void cacheItemSchedules(std::vector<schedule> scheds);
 
 signals:
 

@@ -36,7 +36,9 @@ SOURCES += main.cpp\
     dialogs/simplemessagebox.cpp \
     windows/errorresolver.cpp \
     windows/reservationroot.cpp \
-    windows/catitems.cpp
+    windows/catitems.cpp \
+    dialogs/iteminfodisplay.cpp \
+    dialogs/itemconfirmationdialog.cpp
 
 HEADERS  += windows/mainwindow.h \
     windows/basewindow.h \
@@ -63,7 +65,9 @@ HEADERS  += windows/mainwindow.h \
     dialogs/simplemessagebox.h \
     windows/errorresolver.h \
     windows/reservationroot.h \
-    windows/catitems.h
+    windows/catitems.h \
+    dialogs/iteminfodisplay.h \
+    dialogs/itemconfirmationdialog.h
 
 FORMS    += windows/mainwindow.ui \
     windows/basewindow.ui \
@@ -82,7 +86,9 @@ FORMS    += windows/mainwindow.ui \
     dialogs/simplemessagebox.ui \
     windows/errorresolver.ui \
     windows/reservationroot.ui \
-    windows/catitems.ui
+    windows/catitems.ui \
+    dialogs/iteminfodisplay.ui \
+    dialogs/itemconfirmationdialog.ui
 
 DISTFILES += \
     Documentation/Data_Layout.md

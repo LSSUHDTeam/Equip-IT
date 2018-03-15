@@ -8,7 +8,7 @@
 #include <QStringList>
 #include <QMap>
 
-#define DISPLAY_TESTING_FEATURES false
+#define DISPLAY_TESTING_FEATURES true
 #define MINUTES_BEFORE_RES_ALERT 10
 #define MINUTES_TIME_BUFFER 30
 #define DATETIME_FORMAT "dd/MM/yyyy h:mm AP"
@@ -302,9 +302,10 @@ struct repetition {
 struct timespecificItems{
     // Item name -> definition
     QMap<QString, reservableItems> availableItems;
+    QMap<QString, reservableItems> availableItemsByBarcode;
     QMap<QString, reservableItems> unAvailableItems;
-    QMap<QString, reservableItems> schedAvail;
-    QMap<QString, reservableItems> schedUnavail;
+    QMap<QString, schedule> schedAvail;
+    QMap<QString, schedule> schedUnavail;
     bool inited;
 
     timespecificItems(){
@@ -314,7 +315,10 @@ struct timespecificItems{
                       std::vector<schedule> availScheds, std::vector<schedule> unavailScheds)
     {
         for(auto i = available.begin(); i != available.end(); ++i)
+        {
             availableItems.insert((*i).name, (*i));
+            availableItemsByBarcode.insert((*i).barcode, (*i));
+        }
         for(auto i = unavailable.begin(); i != unavailable.end(); ++i)
             unAvailableItems.insert((*i).name, (*i));
         for(auto i = availScheds.begin(); i != availScheds.end(); ++i)
@@ -328,6 +332,7 @@ struct timespecificItems{
         availableItems = other.availableItems;
         unAvailableItems = other.unAvailableItems;
         schedAvail = other.schedAvail; schedUnavail = other.schedUnavail;
+        availableItemsByBarcode = other.availableItemsByBarcode;
         inited = true;
         return *this;
     }

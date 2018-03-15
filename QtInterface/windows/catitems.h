@@ -9,6 +9,8 @@
 #include <QMainWindow>
 #include <QCloseEvent>
 #include <QStringList>
+#include "dialogs/iteminfodisplay.h"
+#include "dialogs/itemconfirmationdialog.h"
 #include "framework/ephimeral.h"
 #include "framework/contextmanger.h"
 #include "framework/structures.h"
@@ -63,6 +65,10 @@ private slots:
     void some_item_unclick();
 
     void some_unavailable_click();
+
+    void on_homeButton_clicked();
+
+    void itemsConfirmedByUser(std::vector<reservableItems> confirmedItems);
 
 private:
     Ui::CatItems *ui;

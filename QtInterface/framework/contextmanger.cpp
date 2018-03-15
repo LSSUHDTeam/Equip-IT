@@ -10,7 +10,6 @@ ContextManager::ContextManager(QObject *parent) : QObject(parent)
     connect(&dam, SIGNAL(externalRequestResponse(DAMError, DAMAlienPackage)),
             this, SLOT(preparedRequestResponse(DAMError, DAMAlienPackage)));
 
-
     connect(&dam, SIGNAL(networkError(DAMStatus)), this, SLOT(networkError(DAMStatus)));
 }
 
@@ -55,10 +54,29 @@ std::vector<itemCategories> ContextManager::getExistingCats()
     return dam.getAllCats();
 }
 
+std::vector<schedule> ContextManager::getScheduleCache()
+{
+    return schedCache;
+}
+
+bool ContextManager::isSchedCacheValid()
+{
+    return schedCache.size() > 0;
+}
 
 DAMError ContextManager::updateItemPeriphs(QString barcode, std::vector<peripherals> newPeriphs)
 {
     return dam.updatePeripheralInformationByBarcode(barcode, newPeriphs);
+}
+
+void ContextManager::cacheScheduleData(std::vector<schedule> data)
+{
+    schedCache = data;
+}
+
+void ContextManager::clearSchedCache()
+{
+    schedCache.clear();
 }
 
 void ContextManager::prepareNetworkCalls(std::vector<DAMOrigin> calls, WindowDescriptors wcaller)
@@ -68,7 +86,11 @@ void ContextManager::prepareNetworkCalls(std::vector<DAMOrigin> calls, WindowDes
     preparedCalls = calls.size();
     currentNetworkCaller = wcaller;
 
-    qDebug() << "ContextManager: Preparing [" << preparedCalls << "] calls from " << winHelp.getStringFromWid(wcaller) ;
+    if(DISPLAY_TESTING_FEATURES)
+        qDebug() << "ContextManager: Preparing [" <<
+                    preparedCalls << "] calls from " <<
+                    winHelp.getStringFromWid(wcaller) ;
+
     foreach(DAMOrigin call, calls)
     {
         dam.performSpecificQuery(call);
@@ -79,7 +101,10 @@ void ContextManager::preparedRequestResponse(DAMError e, DAMAlienPackage p)
 {
     preparedCalls--;
 
-    qDebug() << "ContextManager: Got prepared response. [" << preparedCalls << "] response(s) left.";
+    if(DISPLAY_TESTING_FEATURES)
+        qDebug() << "ContextManager: Got prepared response. [" <<
+                    preparedCalls << "] response(s) left.";
+
     if(e.errorCode != 0)
     {
         preparedErrors.push_back(e);

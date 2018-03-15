@@ -5,6 +5,12 @@ Ephimeral::Ephimeral(ContextManager *context, EphimeralStage stage,  QWidget *pa
     localContext = context;
     currentStage = stage;
 
+    connect(localContext, SIGNAL(preparedDataReady(std::vector<DAMError>, std::vector<DAMAlienPackage>)),
+            this, SLOT(preparedReturnedFromContext(std::vector<DAMError>, std::vector<DAMAlienPackage>)));
+
+    if(!localContext->isSchedCacheValid())
+        updateScheduleCache();
+
     switch(stage){
     case EphimeralStage::BuildingReminder:
         localContext->addUserCrumb("Ephimeral: Creating new reminder");
@@ -19,14 +25,54 @@ Ephimeral::Ephimeral(ContextManager *context, EphimeralStage stage,  QWidget *pa
         localContext->addUserCrumb("Ephimeral: Editing a reservation");
         break;
     }
-
-    connect(localContext, SIGNAL(preparedDataReady(std::vector<DAMError>, std::vector<DAMAlienPackage>)),
-            this, SLOT(preparedReturnedFromContext(std::vector<DAMError>, std::vector<DAMAlienPackage>)));
 }
 
 Ephimeral::~Ephimeral()
 {
     localContext = 0;
+}
+
+// Update the schedules of items that exist
+void Ephimeral::updateScheduleCache()
+{
+    // Generate network calls to get ALL item's schedules
+    std::vector<DAMOrigin> preparedCalls;
+    std::vector<reservableItems> allItems = localContext->getExistingItems();
+    for(auto i = allItems.begin(); i != allItems.end(); ++i)
+    {
+        DAMOrigin call(
+                    WindowDescriptors::_non_window_ephimeral,
+                    QUrl( QString(WEB_SERVER_FETCH_ADDRESS)
+                          + "/schedules?classifier=single&id=" + (*i).barcode +
+                         "&token=" + QString(WEB_SERVER_APITOKEN))
+                    );
+        call.isGet = true;
+        call.allowReplay = false;
+        call.isFullUpdate = false;
+        call.format = respDataTypes::schedules;
+        preparedCalls.push_back(call);
+    }
+
+    // Make the calls
+    executePreparedCalls(preparedCalls);
+
+    // Check for network errors
+    if(errorReports.size() > 0)
+    {
+        throwNetworkErrors(NetworkCallerConfig(NetworkCallerOrigin::secondary, DAMStatus(errorReports,alienPackages),true));
+        return;
+    }
+
+    std::vector<schedule> scheduleCache;
+    for(auto i = alienPackages.begin(); i != alienPackages.end(); ++i)
+    {
+        for(auto j = (*i).sched.begin(); j != (*i).sched.end(); ++j)
+        {
+            scheduleCache.push_back((*j));
+        }
+    }
+    localContext->cacheScheduleData(scheduleCache);
+    return;
 }
 
 /*
@@ -147,118 +193,54 @@ QDateTime Ephimeral::getEnd()
     return stringToDateTime(currentReservation.end);
 }
 
+QString Ephimeral::getStartString()
+{
+    return currentReservation.start;
+}
+
+QString Ephimeral::getEndString()
+{
+    return currentReservation.end;
+}
+
 timespecificItems Ephimeral::getTimeSpecifiedItems()
 {
     if(timeScheduleCache.inited)
-    {
-        qDebug() << "Using cached schedule";
         return timeScheduleCache;
-    }
-    qDebug() << "Generating new time schedule cache";
 
-    // Generate network calls to get ALL item's schedules
-    std::vector<DAMOrigin> preparedCalls;
-    std::vector<reservableItems> allItems = localContext->getExistingItems();
-    for(auto i = allItems.begin(); i != allItems.end(); ++i)
-    {
-        DAMOrigin call(
-                    WindowDescriptors::_non_window_ephimeral,
-                    QUrl( QString(WEB_SERVER_FETCH_ADDRESS)
-                          + "/schedules?classifier=single&id=" + (*i).barcode +
-                         "&token=" + QString(WEB_SERVER_APITOKEN))
-                    );
-        call.isGet = true;
-        call.allowReplay = false;
-        call.isFullUpdate = false;
-        call.format = respDataTypes::schedules;
-        preparedCalls.push_back(call);
-    }
-
-    // Make the calls
-    executePreparedCalls(preparedCalls);
-
-    // Check for network errors
-    if(errorReports.size() > 0)
-    {
-        throwNetworkErrors(NetworkCallerConfig(NetworkCallerOrigin::secondary, DAMStatus(errorReports,alienPackages),true));
-        return timespecificItems();
-    }
-
-    // Check for conflicting things
+    existingConflicts.clear();
+    std::vector<schedule> cached = localContext->getScheduleCache();
     std::vector<reservableItems> conflictingItems, nonconflictingItems;
     std::vector<schedule> conflictingSchedules, nonConflictingSchules;
-    for(auto i = alienPackages.begin(); i != alienPackages.end(); ++i)
+    for(auto i = cached.begin(); i != cached.end(); ++i)
     {
-        for(auto j = (*i).sched.begin(); j != (*i).sched.end(); ++j)
+        scheduleConflict temp = (*i).checkForConflict(
+                    currentReservation.start, currentReservation.end
+                    );
+        if(temp.exists)
         {
-            scheduleConflict temp = (*j).checkForConflict(currentReservation.start, currentReservation.end);
-            if(temp.exists)
-            {
-                conflictingItems.push_back(localContext->getItemByBarcode(temp.itembarcode));
-                conflictingSchedules.push_back((*i).sched);
-            } else {
-                nonconflictingItems.push_back(localContext->getItemByBarcode(temp.itembarcode));
-                nonConflictingSchules.push_back((*i).sched);
-            }
+            // If its relevant to our reservation, now then we have an issue
+            if(currentReservation.itemBarcodes.contains((*i).scheduleid))
+                existingConflicts.push_back(temp);
+
+            conflictingItems.push_back(localContext->getItemByBarcode(temp.itembarcode));
+            conflictingSchedules.push_back((*i));
+        } else {
+            nonconflictingItems.push_back(localContext->getItemByBarcode(temp.itembarcode));
+            nonConflictingSchules.push_back((*i));
         }
     }
     timeScheduleCache = timespecificItems(
-                nonconflictingItems, conflictingItems
+                nonconflictingItems, conflictingItems,
+                nonConflictingSchules, conflictingSchedules
                 );
-
     return timeScheduleCache;
 }
 
 void Ephimeral::finalizeReservation()
 {
-    // Get schedule of items on res list
-    secureItemScheduleData();
-
-    // If errors exist, we want to throw them at the user. Once in their face, they may choose to retry the
-    // connection... or they can ignore it completly.
-    if(errorReports.size() > 0)
-    {
-        throwNetworkErrors(NetworkCallerConfig(NetworkCallerOrigin::secondary, DAMStatus(errorReports,alienPackages),true));
-    } else {
-
-        // If no errors occur, then we need to start analyzing the schedule to check for conflicts and whatnot
-        analyzeSchedule();
-    }
-}
-
-void Ephimeral::secureItemScheduleData()
-{
-    std::vector<DAMOrigin> preparedCalls;
-    foreach(QString barcode, currentReservation.itemBarcodes)
-    {
-        DAMOrigin call(
-                    WindowDescriptors::_non_window_ephimeral,
-                    QUrl( QString(WEB_SERVER_FETCH_ADDRESS)
-                          + "/schedules?classifier=single&id=" + barcode +
-                         "&token=" + QString(WEB_SERVER_APITOKEN))
-                    );
-        call.isGet = true;
-        call.allowReplay = false;
-        call.isFullUpdate = false;
-        call.format = respDataTypes::schedules;
-        preparedCalls.push_back(call);
-    }
-
-    executePreparedCalls(preparedCalls);
-}
-
-void Ephimeral::analyzeSchedule()
-{
-    existingConflicts.clear();
-    for(auto i = alienPackages.begin(); i != alienPackages.end(); ++i)
-    {
-        for(auto j = (*i).sched.begin(); j != (*i).sched.end(); ++j)
-        {
-            scheduleConflict temp = (*j).checkForConflict(currentReservation.start, currentReservation.end);
-            if(temp.exists)
-                existingConflicts.push_back(temp);
-        }
-    }
+    timeScheduleCache.clear();
+    getTimeSpecifiedItems();
 
     if(existingConflicts.size()>0)
     {
@@ -294,22 +276,12 @@ void Ephimeral::submitCompletedReservation()
     call.format = respDataTypes::updatedItem;
     preparedCalls.push_back(call);
 
-
-    qDebug() << "NEED TO UPDATE PERIPH INFO TO SERVER HERE!  Ephimeral::submitCompletedReservation() ";
-
-
     foreach(QString itemBarcode, currentReservation.itemBarcodes)
     {
         reservableItems currentItem = localContext->getItemByBarcode(itemBarcode);
 
         if(currentItem.barcode != "error")
         {
-            /*
-
-                    UPITEM NOT YET CREATED ON SERVR
-
-            */
-
             QUrl outUrl = QUrl(QString(WEB_SERVER_UPDATE_ADDRESS) +
                           "/upitem?token=" + QString(WEB_SERVER_APITOKEN) +
                                "&data=" + currentItem.exportJson());
@@ -323,7 +295,6 @@ void Ephimeral::submitCompletedReservation()
         }
     }
 
-
     // Execute
     executePreparedCalls(preparedCalls);
 
@@ -334,6 +305,8 @@ void Ephimeral::submitCompletedReservation()
     {
         throwNetworkErrors(NetworkCallerConfig(NetworkCallerOrigin::secondary, DAMStatus(errorReports,alienPackages),true));
     } else {
+        // Clear cache because it is now invalid
+        localContext->clearSchedCache();
         emit submitSuccess();
     }
 }

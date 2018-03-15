@@ -21,26 +21,24 @@ CatItems::CatItems(ContextManager *context, Ephimeral *ephim, QWidget *parent) :
     ui->unselExamp->setStyleSheet(standardButton);
     ui->catExamp->setStyleSheet(catButtonmeow);
     timeCache = curentReservation->getTimeSpecifiedItems();
+    ui->finalizeButton->setEnabled(false);
 
-
-    qDebug() << "Available Items: ";
-    for(QString key : timeCache.availableItems.keys())
+    if(DISPLAY_TESTING_FEATURES)
     {
-        qDebug() << key << " => " << timeCache.availableItems.value(key).barcode << "\n";
+        qDebug() << "Available Items: ";
+        for(QString key : timeCache.availableItems.keys())
+        {
+            qDebug() << key << " => " << timeCache.availableItems.value(key).barcode << "\n";
+        }
+
+        qDebug() << "UnAvailable Items: ";
+        for(QString key : timeCache.unAvailableItems.keys())
+        {
+            qDebug() << key << " => " << timeCache.unAvailableItems.value(key).barcode << "\n";
+        }
+
+        qDebug() << "\n\nEND\n\n";
     }
-
-    qDebug() << "UnAvailable Items: ";
-    for(QString key : timeCache.unAvailableItems.keys())
-    {
-        qDebug() << key << " => " << timeCache.unAvailableItems.value(key).barcode << "\n";
-    }
-
-    qDebug() << "\n\nEND\n\n";
-
-
-
-
-
     loadButtonMap();
     updateGrid();
 }
@@ -54,18 +52,18 @@ void CatItems::shutdownWindow()
 {
     emit closeChildren();
     emit catItemsClosed();
-    this->close();
-}
-
-void CatItems::forceClose()
-{
-    shutdownWindow();
 }
 
 void CatItems::closeEvent(QCloseEvent *event)
 {
-    Q_UNUSED(event)
     shutdownWindow();
+    event->accept();
+}
+
+
+void CatItems::forceClose()
+{
+    this->close();
 }
 
 void CatItems::on_searchButton_clicked()
@@ -75,7 +73,14 @@ void CatItems::on_searchButton_clicked()
 
 void CatItems::on_finalizeButton_clicked()
 {
-
+    ItemConfirmationDialog * itemConfirm = new ItemConfirmationDialog(
+                localContext, itemsSelected
+                );
+    connect(itemConfirm, SIGNAL(confirmed(std::vector<reservableItems>)),
+            this, SLOT(itemsConfirmedByUser(std::vector<reservableItems>)));
+    connect(this, SIGNAL(closeChildren()), SLOT(forceClose()));
+    itemConfirm->setAttribute(Qt::WA_DeleteOnClose, true);
+    itemConfirm->showMaximized();
 }
 
 void CatItems::on_upButton_clicked()
@@ -116,6 +121,9 @@ void CatItems::some_item_click()
             itemsSelected.push_back(*i);
         }
     }
+
+    if (itemsSelected.size() > 0)
+        ui->finalizeButton->setEnabled(true);
 }
 
 void CatItems::some_item_unclick()
@@ -131,6 +139,8 @@ void CatItems::some_item_unclick()
                     labelMap.value(selectedItem)
                     ),
                 itemsSelected.end());
+    if (itemsSelected.size() == 0)
+        ui->finalizeButton->setEnabled(false);
 }
 
 void CatItems::some_unavailable_click()
@@ -151,10 +161,16 @@ void CatItems::some_unavailable_click()
 
     // Get the actual entry that contains issues for this time frame
     scheduleConflict which_entry = itemsSchedule.checkForConflict(
-                curentReservation->getStart(), curentReservation->getEnd()
+                curentReservation->getStartString(), curentReservation->getEndString()
                 );
 
 
+    ItemInfoDisplay *iinfo = new ItemInfoDisplay(
+                ItemInfoWrap(localContext->getItemByBarcode(unavailBarcode),
+                             itemsSchedule, false),
+                this);
+    iinfo->setAttribute(Qt::WA_DeleteOnClose, true);
+    iinfo->showMaximized();
 
 }
 
@@ -306,4 +322,27 @@ void CatItems::updateCatPath()
                 ui->infoLabel->setText(ui->infoLabel->text()+ "\\" + cat);
         }
     }
+}
+
+void CatItems::on_homeButton_clicked()
+{
+    catPath.clear();
+    catPath.append("NONE");
+    updateCatPath();
+    updateGrid();
+}
+
+void CatItems::itemsConfirmedByUser(std::vector<reservableItems> confirmedItems)
+{
+    // Could add items to res here, but keeping with
+    // quick reservation functional standard
+    QStringList itemBarcodes;
+    itemsSelected = confirmedItems;
+    for(auto i = confirmedItems.begin(); i != confirmedItems.end(); ++i)
+    {
+        localContext->updateItemPeriphs((*i).barcode, (*i).periphs);
+        itemBarcodes.append((*i).barcode);
+    }
+    emit dataReady(itemBarcodes);
+    shutdownWindow();
 }

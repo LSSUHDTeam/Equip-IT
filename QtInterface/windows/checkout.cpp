@@ -5,15 +5,6 @@ CheckOut::CheckOut(ContextManager *context, CheckoutType mode, QWidget *parent) 
     QMainWindow(parent),
     ui(new Ui::CheckOut)
 {
-    // UI
-    ui->setupUi(this);
-    this->showMaximized();
-    timeSet = false; itemsSet = false;
-    forSet = false; bySet = false, allowView = false;
-    descSet = false;
-
-    ui->testLoadingButton->setVisible(DISPLAY_TESTING_FEATURES);
-
     // Operation dependencies
     localContext = context;
     checkoutMode = mode;
@@ -28,6 +19,14 @@ CheckOut::CheckOut(ContextManager *context, CheckoutType mode, QWidget *parent) 
             this, SLOT(ephimeralNetworkErrorMarkedIgnore()));
     connect(ephimeralReservation, SIGNAL(submitSuccess()),
             this, SLOT(showSubmitSuccess()));
+
+    // UI
+    ui->setupUi(this);
+    this->showMaximized();
+    timeSet = false; itemsSet = false;
+    forSet = false; bySet = false, allowView = false;
+    descSet = false;
+    ui->testLoadingButton->setVisible(DISPLAY_TESTING_FEATURES);
 
     // Log current mode
     switch(checkoutMode){
@@ -465,11 +464,23 @@ void CheckOut::on_testLoadingButton_clicked()
 {
     QDateTime start = QDateTime::currentDateTime();
     QDateTime end = start.addDays(1);
-    ephimeralReservation->addItemToReservation("938-x837-3284");
-    ephimeralReservation->addItemToReservation("929-x837-3284");
-    ephimeralReservation->setReservationTimeRange(start, end);
-    ephimeralReservation->setReservationFor("Josh Tester");
-    ephimeralReservation->setReservationEmail("jbosley2@lssu.edu");
-    ephimeralReservation->setReservationDescription("Simple test res");
-    ui->completeReservationButton->setEnabled(true);
+    switch(checkoutMode){
+    case CheckoutType::BuilderCheckout:
+        ephimeralReservation->setReservationTimeRange(start, end);
+        ephimeralReservation->setReservationFor("Josh Tester");
+        ephimeralReservation->setReservationEmail("jbosley2@lssu.edu");
+        ephimeralReservation->setReservationDescription("Simple test res");
+        ui->completeReservationButton->setEnabled(true);
+        timeSet = true;
+        break;
+    case CheckoutType::QuickCheckout:
+        ephimeralReservation->addItemToReservation("938-x837-3284");
+        ephimeralReservation->addItemToReservation("929-x837-3284");
+        ephimeralReservation->setReservationTimeRange(start, end);
+        ephimeralReservation->setReservationFor("Josh Tester");
+        ephimeralReservation->setReservationEmail("jbosley2@lssu.edu");
+        ephimeralReservation->setReservationDescription("Simple test res");
+        ui->completeReservationButton->setEnabled(true);
+        break;
+    }
 }

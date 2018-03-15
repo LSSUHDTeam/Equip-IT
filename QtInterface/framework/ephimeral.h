@@ -56,6 +56,8 @@ public:
     QString getItemNameFromBarcode(QString barcode);
     QDateTime getStart();
     QDateTime getEnd();
+    QString getStartString();
+    QString getEndString();
 
 
     /*
@@ -119,13 +121,12 @@ private:
     void throwNetworkErrors(NetworkCallerConfig);
     std::vector<DAMError> errorReports;
     std::vector<DAMAlienPackage> alienPackages;
-    void secureItemScheduleData();
+    void updateScheduleCache();
 
     /*
         Check for schedule issues
     */
     std::vector<scheduleConflict> existingConflicts;
-    void analyzeSchedule();
 
     /*
         Network call

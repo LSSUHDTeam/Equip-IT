@@ -13,6 +13,20 @@ class ContextManager : public QObject
     Q_OBJECT
 public:
     explicit ContextManager(QObject *parent = 0);
+
+
+    /*
+        Context Getters
+    */
+    std::vector<schedule> getScheduleCache();
+    bool isSchedCacheValid();
+
+    /*
+        Context Setters
+    */
+    void cacheScheduleData(std::vector<schedule> data);
+    void clearSchedCache();
+
     /*
         Session Accessors
     */
@@ -83,6 +97,7 @@ private:
     SessionObject session;
     DataAccessManager dam;
     WindowHelper winHelp;
+    std::vector<schedule> schedCache;
 
     WindowDescriptors currentNetworkCaller;
     int preparedCalls;
