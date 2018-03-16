@@ -34,6 +34,9 @@ void SimpleMessageBox::on_okayButton_clicked()
 void SimpleMessageBox::closeEvent(QCloseEvent *event)
 {
     if(!forced)
+    {
+        this->hide();
         emit messageBoxClosed();
+    }
     event->accept();
 }

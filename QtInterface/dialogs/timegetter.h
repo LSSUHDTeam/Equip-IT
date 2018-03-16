@@ -6,6 +6,9 @@
 #include <QTime>
 #include <QString>
 #include <QDateTime>
+#include "framework/structures.h"
+#include "dialogs/manualtimeentry.h"
+#include "windows/configurerepetition.h"
 
 #define STUDENT_FRIENDLY_FORMAT_BECAUSE_THEY_DONT_UNDERSTAND_24_HOUR_TIME "h:mm ap : ddd MMMM d yy "
 
@@ -29,11 +32,17 @@ public:
     ~TimeGetter();
 
 signals:
+    closeChildren();
     setDateTimeRange(QDateTime, QDateTime);
+    generateRepeatedSchedule(repetition);
     actionsCompleted();
 
 public slots:
     void forceClose();
+
+    void manual_time_returned(QString);
+
+    void repeat_selection_returned(repetition data);
 
 private slots:
     void on_calendarStart_clicked(const QDate &date);
@@ -49,6 +58,14 @@ private slots:
     void on_lockInButton_clicked();
 
     void on_amppmtoggle_clicked();
+
+    void on_prevMonthButton_clicked();
+
+    void on_nextMonthButton_clicked();
+
+    void on_manualTimeEntry_clicked();
+
+    void on_repeatReservation_clicked();
 
 private:
     Ui::TimeGetter *ui;

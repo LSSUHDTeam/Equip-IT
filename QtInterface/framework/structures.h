@@ -262,14 +262,18 @@ enum class repititionType{
     M, T, W, R, F, S, Su
 };
 enum class repititionFrequency{
-    once, weekly, biweekly, monthly, yearly
+    daily, weekly, monthly, yearly
 };
 enum class repititionMarker{
     reminder, reservation
 };
 
 struct repetition {
-    repititionType repType;
+
+    std::vector<repititionType> repType;
+
+
+
     repititionMarker repMarker;
     repititionFrequency repFreq;
     QString repid, firstOccurrence, lastOccurrence, status;
@@ -291,7 +295,7 @@ struct repetition {
     repetition(){}
 
     // For constructing already generated repitions from a data stream (LIKE DAM!)
-    repetition(repititionType rt, repititionMarker ma, repititionFrequency rfm, QString rid, QString fo, QString lo, QString stat, QStringList crids)
+    repetition(std::vector<repititionType> rt, repititionMarker ma, repititionFrequency rfm, QString rid, QString fo, QString lo, QString stat, QStringList crids)
     {
         repType = rt; repFreq = rfm; repid = rid; firstOccurrence = fo;
         repMarker = ma; lastOccurrence = lo; status = stat;

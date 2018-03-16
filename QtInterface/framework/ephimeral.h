@@ -45,6 +45,8 @@ public:
     void setReservationDescription(QString);
     void updateReservationStartTime(QDateTime newStart);
     void updateReservationEndTime(QDateTime newEnd);
+    void createRepeatedObject(repetition);
+    void clearReservationItems();
 
     /*
         Reservation - Getters
@@ -101,7 +103,8 @@ private:
     ContextManager *localContext;
     EphimeralStage currentStage;
     timespecificItems timeScheduleCache;
-
+    repetition repetitionFormat;
+    bool repeatFlag;
     /*
         General helpers for class
     */

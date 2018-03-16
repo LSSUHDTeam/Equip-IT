@@ -18,6 +18,8 @@
 #include "windows/catitems.h"
 #include "objects/etouchlineedit.h"
 
+#include "windows/bettertimeget.h"
+
 
 enum class KeyboardFlow{
     ignore,
@@ -87,6 +89,7 @@ public slots:
     void setTimeFrame(QDateTime start, QDateTime end);
     void setBuildingAndRoom(QString building, QString room);
     void pullTimeCache();
+    void setRepeatingReservation(repetition);
 
     // Finalization Slots
     void reservationCompletedAndAcknowledged();

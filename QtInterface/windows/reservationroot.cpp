@@ -24,11 +24,11 @@ void ReservationRoot::childWindowClosed(WindowDescriptors wid)
 {
     if(wid == WindowDescriptors::CheckoutRoot)
     {
-        qDebug() << "ReservationRoot::childWindowClosed: CheckoutRoot closed.";
+        localContext->addUserCrumb("CheckoutRoot Closed");
     }
     else if (wid == WindowDescriptors::ReservationEdit)
     {
-        qDebug() << "ReservationRoot::childWindowClosed: ReservationEdit closed.";
+        localContext->addUserCrumb("ReservationEdit Closed");
     }
     else
     {
@@ -36,6 +36,7 @@ void ReservationRoot::childWindowClosed(WindowDescriptors wid)
     }
     localContext->changeUserLocation(WindowDescriptors::ReservationRoot);
     toggleControlAvailabilty();
+    shutdownWindow();
 }
 
 void ReservationRoot::on_newResButton_clicked()

@@ -11,6 +11,7 @@ Ephimeral::Ephimeral(ContextManager *context, EphimeralStage stage,  QWidget *pa
     if(!localContext->isSchedCacheValid())
         updateScheduleCache();
 
+    repeatFlag = false;
     switch(stage){
     case EphimeralStage::BuildingReminder:
         localContext->addUserCrumb("Ephimeral: Creating new reminder");
@@ -138,6 +139,19 @@ void Ephimeral::updateReservationStartTime(QDateTime newStart)
 void Ephimeral::updateReservationEndTime(QDateTime newEnd)
 {
     currentReservation.end = dateTimeToString(newEnd);
+}
+
+void Ephimeral::createRepeatedObject(repetition info)
+{
+    repetitionFormat = info;
+    repeatFlag = true;
+    if(timeScheduleCache.inited)
+        timeScheduleCache.clear();
+}
+
+void Ephimeral::clearReservationItems()
+{
+    currentReservation.itemBarcodes.clear();
 }
 
 reservations Ephimeral::getCurrentReservation()

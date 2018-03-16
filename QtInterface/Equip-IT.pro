@@ -38,7 +38,11 @@ SOURCES += main.cpp\
     windows/reservationroot.cpp \
     windows/catitems.cpp \
     dialogs/iteminfodisplay.cpp \
-    dialogs/itemconfirmationdialog.cpp
+    dialogs/itemconfirmationdialog.cpp \
+    dialogs/manualtimeentry.cpp \
+    windows/configurerepetition.cpp \
+    windows/bettertimeget.cpp \
+    dialogs/bettertimeselection.cpp
 
 HEADERS  += windows/mainwindow.h \
     windows/basewindow.h \
@@ -67,7 +71,11 @@ HEADERS  += windows/mainwindow.h \
     windows/reservationroot.h \
     windows/catitems.h \
     dialogs/iteminfodisplay.h \
-    dialogs/itemconfirmationdialog.h
+    dialogs/itemconfirmationdialog.h \
+    dialogs/manualtimeentry.h \
+    windows/configurerepetition.h \
+    windows/bettertimeget.h \
+    dialogs/bettertimeselection.h
 
 FORMS    += windows/mainwindow.ui \
     windows/basewindow.ui \
@@ -88,7 +96,11 @@ FORMS    += windows/mainwindow.ui \
     windows/reservationroot.ui \
     windows/catitems.ui \
     dialogs/iteminfodisplay.ui \
-    dialogs/itemconfirmationdialog.ui
+    dialogs/itemconfirmationdialog.ui \
+    dialogs/manualtimeentry.ui \
+    windows/configurerepetition.ui \
+    windows/bettertimeget.ui \
+    dialogs/bettertimeselection.ui
 
 DISTFILES += \
     Documentation/Data_Layout.md

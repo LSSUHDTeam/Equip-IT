@@ -21,7 +21,23 @@ TimeGetter::~TimeGetter()
 
 void TimeGetter::forceClose()
 {
+    emit closeChildren();
     this->close();
+}
+
+void TimeGetter::manual_time_returned(QString time)
+{
+    ui->startTimeEdit->setTime(
+                QTime::fromString(time, "h:mm AP")
+                );
+}
+
+void TimeGetter::repeat_selection_returned(repetition data)
+{
+    qDebug() << " Time Getter: Creating a repeated schedule";
+
+    this->close();
+    emit generateRepeatedSchedule(data);
 }
 
 void TimeGetter::on_calendarStart_clicked(const QDate &date)
@@ -162,4 +178,38 @@ void TimeGetter::finalize()
 void TimeGetter::on_amppmtoggle_clicked()
 {
     ui->startTimeEdit->setTime(ui->startTimeEdit->time().addSecs(43200));
+}
+
+void TimeGetter::on_prevMonthButton_clicked()
+{
+    QDate date = ui->calendarStart->selectedDate();
+    date.setDate(date.year(), date.month(), 1);
+    date.addMonths(-1);
+    ui->calendarStart->setSelectedDate(date);
+}
+
+void TimeGetter::on_nextMonthButton_clicked()
+{
+    QDate date = ui->calendarStart->selectedDate();
+    date.setDate(date.year(), date.month(), 1);
+    date.addMonths(1);
+    ui->calendarStart->setSelectedDate(date);
+}
+
+void TimeGetter::on_manualTimeEntry_clicked()
+{
+    ManualTimeEntry *mt = new ManualTimeEntry(this);
+    connect(mt, SIGNAL(manualEntryComplete(QString)),
+            this, SLOT(manual_time_returned(QString)));
+    mt->setAttribute(Qt::WA_DeleteOnClose, true);
+    mt->showMaximized();
+}
+
+void TimeGetter::on_repeatReservation_clicked()
+{
+    ConfigureRepetition *cr = new ConfigureRepetition(this);
+    connect(cr, SIGNAL(repeatedComplete(repetition)),
+            this, SLOT(repeat_selection_returned(repetition)));
+    cr->setAttribute(Qt::WA_DeleteOnClose, true);
+    cr->showMaximized();
 }

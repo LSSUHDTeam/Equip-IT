@@ -88,19 +88,18 @@ void CheckOut::shutdownWindow()
     emit closeChildren();
     emit closeKeyboard();
     emit checkoutClosed(WindowDescriptors::CheckoutRoot);
-    this->close();
 }
 
 void CheckOut::closeEvent(QCloseEvent *event)
 {
-    Q_UNUSED(event);
     shutdownWindow();
+    event->accept();
 }
 
 // External signal to shutdown window (session end, etc)
 void CheckOut::forceClose()
 {
-    shutdownWindow();
+    this->close();
 }
 
 void CheckOut::ephimeralNetworkErrorMarkedIgnore()
@@ -329,6 +328,32 @@ void CheckOut::pullTimeCache()
     }
 }
 
+void CheckOut::setRepeatingReservation(repetition info)
+{
+    localContext->addUserCrumb("Create repeating reservation");
+    ephimeralReservation->createRepeatedObject(info);
+
+
+    if(ephimeralReservation->getItemsOnReservation().size() > 0)
+    {
+        ephimeralReservation->clearReservationItems();
+        itemsSet = false;
+        checkForViewEnable();
+
+        localContext->addUserCrumb("Repetition post item add error");
+        QStringList message;
+        message << "\n\n\tReservation was set to repeat after items were selected. " <<
+                   "To ensure that items aren't double-booked, all items have been " <<
+                   "removed from the reservation. Please re-visit the item building " <<
+                   "window to re-select all items that are required.";
+
+        SimpleMessageBox *smb = new SimpleMessageBox(smbdata("Checkout", "Reservation error", message), this);
+        connect(this, SIGNAL(closeChildren()), smb, SLOT(forceClose()));
+        smb->setAttribute(Qt::WA_DeleteOnClose, true);
+        smb->showMaximized();
+    }
+}
+
 void CheckOut::reservationCompletedAndAcknowledged()
 {
     this->close();
@@ -395,14 +420,27 @@ void CheckOut::on_timeButton_clicked()
     case CheckoutType::BuilderCheckout:
     {
         localContext->addUserCrumb("Checkout 'builder' mode");
+
+
+        /*
         TimeGetter *timeget = new TimeGetter(this);
         connect(this, SIGNAL(closeChildren()), timeget, SLOT(forceClose()));
         connect(timeget, SIGNAL(setDateTimeRange(QDateTime, QDateTime)),
                 this, SLOT(setTimeFrame(QDateTime, QDateTime)));
         connect(timeget, SIGNAL(actionsCompleted()),
                 this, SLOT(pullTimeCache()));
+        connect(timeget, SIGNAL(generateRepeatedSchedule(repetition)),
+                this, SLOT(setRepeatingReservation(repetition)));
         timeget->setAttribute(Qt::WA_DeleteOnClose, true);
         timeget->showMaximized();
+
+
+        */
+
+        BetterTimeGet *timeget = new BetterTimeGet(ephimeralReservation, this);
+        timeget->setAttribute(Qt::WA_DeleteOnClose, true);
+        timeget->showMaximized();
+
         break;
     }
     case CheckoutType::QuickCheckout:
